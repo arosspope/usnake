@@ -212,6 +212,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9199148efbf3463493dd58c03a921add4623147739b9acd15f339b1dc5bfd677"
 
 [[package]]
+name = "max7219"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "006808aa59edf15d1d931b2f521acee9e880c6335c542135255190d3d3bca42c"
+dependencies = [
+ "embedded-hal",
+]
+
+[[package]]
 name = "nb"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -324,6 +333,7 @@ dependencies = [
  "lazy_static",
  "lsm303dlhc",
  "m",
+ "max7219",
  "panic-halt",
 ]
 
