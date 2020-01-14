@@ -1,0 +1,31 @@
+[package]
+name = "uecosystem"
+version = "0.1.0"
+authors = ["arosspope <andrew.pope456@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+cortex-m = "0.5.8"
+cortex-m-rt = "0.6.7"
+panic-halt = "0.2.0"
+# panic-itm = "0.4.0"
+
+atomic = "0.4"
+heapless = "0.5.1"
+lsm303dlhc = "0.2.0"
+m = "0.1.1"
+
+[dependencies.hal]
+package = "alt-stm32f30x-hal"
+version = "0.22.1"
+features = ["stm32f303", "rt"]
+
+[dependencies.lazy_static]
+version = "1.4.0"
+features = ["spin_no_std"]
+
+
+
+# [[bin]]
+# name = "simple"
+# path = "src/exercises/00-simple.rs"
