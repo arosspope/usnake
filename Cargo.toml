@@ -14,7 +14,8 @@ atomic = "0.4"
 heapless = "0.5.1"
 lsm303dlhc = "0.2.0"
 m = "0.1.1"
-max7219 = "0.2.0"
+max7219 = { git = "https://github.com/arosspope/max7219" }
+# max7219 = "0.2.0"
 
 [dependencies.hal]
 package = "alt-stm32f30x-hal"

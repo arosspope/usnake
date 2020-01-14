@@ -214,8 +214,7 @@ checksum = "9199148efbf3463493dd58c03a921add4623147739b9acd15f339b1dc5bfd677"
 [[package]]
 name = "max7219"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "006808aa59edf15d1d931b2f521acee9e880c6335c542135255190d3d3bca42c"
+source = "git+https://github.com/arosspope/max7219#879b4a6b51b37e28aeb077d11cf8fff159f8a07a"
 dependencies = [
  "embedded-hal",
 ]

@@ -16,9 +16,13 @@ use hal::device::{GPIOB, GPIOA};
 use hal::gpio::*;
 
 use max7219::*;
-// use max7219::connectors::*;
+use max7219::connectors::*;
 
-fn initialise() -> (Delay, ITM, hal::gpio::PB7<PullDown, Input>) {
+
+type CONNECTOR = PinConnector<PA6<PullNone, AltFn<AF5, PushPull, LowSpeed>>, PA4<PullNone, AltFn<AF5, PushPull, LowSpeed>>, PA5<PullNone, AltFn<AF5, PushPull, LowSpeed>>>;
+
+fn initialise() -> (Delay, ITM, PB7<PullDown, Input>, MAX7219<CONNECTOR>)
+{
     let cp = cortex_m::Peripherals::take().unwrap();
     let dp = hal::device::Peripherals::take().unwrap();
 
@@ -27,37 +31,33 @@ fn initialise() -> (Delay, ITM, hal::gpio::PB7<PullDown, Input>) {
     let clocks = rcc.cfgr.freeze(&mut flash.acr);
 
     // PB7 -> Input from motion sensor
-    let gpiob = dp.GPIOB.split(&mut rcc.ahb);
+    let gpiob           = dp.GPIOB.split(&mut rcc.ahb);
+    let motion_sensor   = gpiob.pb7.input().pull_type(hal::gpio::PullDown);
 
     // SPI1 for display (PA4=NSS, PA5=SCK, PA6=MISO, PA7=MOSI)
-    let gpioa = dp.GPIOA.split(&mut rcc.ahb);
-    let data = gpioa.pa6.alternating(hal::gpio::AF5);
-    let sck = gpioa.pa5.alternating(hal::gpio::AF5);
-    let cs = gpioa.pa4.alternating(hal::gpio::AF5);
+    let gpioa   = dp.GPIOA.split(&mut rcc.ahb);
+    let data    = gpioa.pa6.alternating(hal::gpio::AF5);
+    let sck     = gpioa.pa5.alternating(hal::gpio::AF5);
+    let cs      = gpioa.pa4.alternating(hal::gpio::AF5);
+    let display = MAX7219::from_pins(1, data, cs, sck).unwrap();
 
-    let _display = MAX7219::from_pins(1, data, cs, sck).unwrap();
-
-
-    // gpioa.pa9.into_af7(&mut gpioa.moder, &mut gpioa.afrh);
-    // let rx = gpioa.pa10.into_af7(&mut gpioa.moder, &mut gpioa.afrh);
-    //
-    // let
-
-
-    // let data = pin!(gpio, spi0_mosi).into_output();
-    // let sck = pin!(gpio, spi0_sck).into_output();
-    // let cs = pin!(gpio, spi0_ss0).into_output();
-    //
-    // let mut display = MAX7219::from_pins(1, data, cs, sck).unwrap();
-
-
-    (Delay::new(cp.SYST, clocks), cp.ITM, gpiob.pb7.input().pull_type(hal::gpio::PullDown))
+    (Delay::new(cp.SYST, clocks), cp.ITM, motion_sensor, display)
 }
 
 
 #[entry]
 fn main() -> ! {
-    let (mut delay, mut itm, motion_sensor) = initialise();
+    // let (mut delay, mut itm, motion_sensor, _data, _cs, _sck) = initialise();
+    let (mut delay, mut itm, motion_sensor, mut display) = initialise();
+
+    
+    // make sure to wake the display up
+    display.power_on().unwrap();
+    // write given octet of ASCII characters with dots specified by 3rd param bits
+    display.write_str(0, b"pls help", 0b00100000).unwrap();
+    // set display intensity lower
+    display.set_intensity(0, 0x1).unwrap();
+
 
     // TODO: Replace ITM with serial
     iprintln!(&mut itm.stim[0], "[WARN] Attempting to use the motion sensor before 60s elapsed may result in undefined behaviour");
