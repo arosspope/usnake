@@ -214,7 +214,7 @@ checksum = "9199148efbf3463493dd58c03a921add4623147739b9acd15f339b1dc5bfd677"
 [[package]]
 name = "max7219"
 version = "0.2.0"
-source = "git+https://github.com/arosspope/max7219#879b4a6b51b37e28aeb077d11cf8fff159f8a07a"
+source = "git+https://github.com/arosspope/max7219#834a766a4183da101b0b3bbcb1b9b4c66cd4c924"
 dependencies = [
  "embedded-hal",
 ]
