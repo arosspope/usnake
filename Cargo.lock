@@ -16,22 +16,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "alt-stm32f30x-hal"
-version = "0.22.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f164261784419be7c756731d8834066b1f852d416ef418ab7e57f324c7e1d6b"
-dependencies = [
- "bitrate",
- "bobbin-bits",
- "cast",
- "cortex-m 0.6.2",
- "embedded-hal",
- "nb",
- "stm32f3",
- "void",
-]
-
-[[package]]
 name = "as-slice"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -56,18 +40,6 @@ checksum = "5deb64efa5bd81e31fcd1938615a6d98c82eafcbcd787162b6f63b91d6bac5b3"
 dependencies = [
  "rustc_version",
 ]
-
-[[package]]
-name = "bitrate"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c147d86912d04bef727828fda769a76ca81629a46d8ba311a8d58a26aa91473d"
-
-[[package]]
-name = "bobbin-bits"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "84a856508d80144eabeae3392de76f269e5fd2983226e4757219f8ce87c5e572"
 
 [[package]]
 name = "byteorder"
@@ -213,8 +185,9 @@ checksum = "9199148efbf3463493dd58c03a921add4623147739b9acd15f339b1dc5bfd677"
 
 [[package]]
 name = "max7219"
-version = "0.2.0"
-source = "git+https://github.com/arosspope/max7219#834a766a4183da101b0b3bbcb1b9b4c66cd4c924"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "426b568d3aa0095db829a6598d5f805a8593aca3bcdaaca796373a7e51012614"
 dependencies = [
  "embedded-hal",
 ]
@@ -293,14 +266,30 @@ checksum = "dba1a27d3efae4351c8051072d619e3ade2820635c3958d826bfea39d59b54c8"
 
 [[package]]
 name = "stm32f3"
-version = "0.7.1"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6916594a131ba4993cb188a60d648c5e81ff9e2337fd4314ce6cd0ad4c6a4416"
+checksum = "8796d066c1bc4fe53cdff215fd3bd90e956520698c34c2bb674f87fe400f2fe8"
 dependencies = [
  "bare-metal",
  "cortex-m 0.6.2",
  "cortex-m-rt",
  "vcell",
+]
+
+[[package]]
+name = "stm32f3xx-hal"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9cba268d4070e654f4e10f35d0cf27e8be5497ebef9a924d8ab8dae1e42d33b6"
+dependencies = [
+ "bare-metal",
+ "cast",
+ "cortex-m 0.6.2",
+ "cortex-m-rt",
+ "embedded-hal",
+ "nb",
+ "stm32f3",
+ "void",
 ]
 
 [[package]]
@@ -324,7 +313,6 @@ checksum = "6d2783fe2d6b8c1101136184eb41be8b1ad379e4657050b8aaff0c79ee7575f9"
 name = "uecosystem"
 version = "0.1.0"
 dependencies = [
- "alt-stm32f30x-hal",
  "atomic",
  "cortex-m 0.5.10",
  "cortex-m-rt",
@@ -334,6 +322,7 @@ dependencies = [
  "m",
  "max7219",
  "panic-halt",
+ "stm32f3xx-hal",
 ]
 
 [[package]]
