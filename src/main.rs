@@ -55,7 +55,6 @@ fn _wait_for_motion(sensor: &PB7<Input<PullDown>>) {
 
 #[entry]
 fn main() -> ! {
-    // let (mut delay, mut itm, motion_sensor, _data, _cs, _sck) = initialise();
     let (mut delay, mut itm, _motion_sensor, mut display) = initialise();
 
     // display.power_off().unwrap();
@@ -67,13 +66,11 @@ fn main() -> ! {
     // set display intensity lower
     // display.set_intensity(0, 0x1).unwrap();
 
-    // TODO: Replace ITM with serial (?)
     iprintln!(&mut itm.stim[0], "[WARN] Attempting to use the motion sensor before 60s elapsed may result in undefined behaviour");
 
     let mut counter = 0;
     loop {
         // iprintln!(&mut itm.stim[0], "[{}] motion detected - {:?}", counter, motion_sensor.is_high().unwrap());
-        // display.clear_display(0).unwrap();
 
         let matrix: [u8; 8] = [
             counter % 255,
@@ -90,9 +87,17 @@ fn main() -> ! {
             Err(_) => iprintln!(&mut itm.stim[0], "[ERROR] Refreshing display failed"),
             _ => (),
         }
-        // display.write_str(0, b"........", 0b11010101).unwrap();
 
         counter += 1;
         delay.delay_ms(150_u16);
     }
+
+    // TODO:
+    //  [] Read joystick controller input (joystick.rs) - will require use of ADC
+    //      - https://github.com/stm32-rs/stm32f3xx-hal/pull/47
+    //      - Could maybe turn it into an embeded-hal abstraction crate?
+    //  [] Implement display class - For updating the world every tick of the game world
+    //  [] Use RTFM to orchestrate the game
+    //      - https://rtfm.rs/0.5/book/en/preface.html
+    //      - https://github.com/rnestler/hello-rtfm-rs
 }
