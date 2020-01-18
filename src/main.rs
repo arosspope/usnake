@@ -64,23 +64,10 @@ fn main() -> ! {
 
     // make sure to wake the display up
     display.power_on().unwrap();
-    // wait_for_motion(&motion_sensor);
-    // delay.delay_ms(1000_u16);
-
-
-    // write given octet of ASCII characters with dots specified by 3rd param bits
-    // display.write_str(0, b"a a a a ", 0b1111111).unwrap();
-
-
-
-    // wait_for_motion(&motion_sensor);
-    // delay.delay_ms(1000_u16);
-    display.test(0, false).unwrap();
     // set display intensity lower
-    display.set_intensity(0, 0x1).unwrap();
-    // display.set_decode_mode(0, DecodeMode::CodeBDigits7_0).unwrap();
+    // display.set_intensity(0, 0x1).unwrap();
 
-    // TODO: Replace ITM with serial
+    // TODO: Replace ITM with serial (?)
     iprintln!(&mut itm.stim[0], "[WARN] Attempting to use the motion sensor before 60s elapsed may result in undefined behaviour");
 
     let mut counter = 0;

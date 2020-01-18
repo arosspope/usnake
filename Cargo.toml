@@ -8,14 +8,12 @@ edition = "2018"
 cortex-m = "0.5.8"
 cortex-m-rt = "0.6.7"
 panic-halt = "0.2.0"
-# panic-itm = "0.4.0"
 
 atomic = "0.4"
 heapless = "0.5.1"
 lsm303dlhc = "0.2.0"
 m = "0.1.1"
-# max7219 = { git = "https://github.com/arosspope/max7219" }
-max7219 = "0.2.1"
+max7219 = "0.2.1"  # alternative -> { git = "https://github.com/arosspope/max7219" }
 
 [dependencies.hal]
 # package = "alt-stm32f30x-hal"
@@ -27,9 +25,3 @@ features = ["stm32f303", "rt"]
 [dependencies.lazy_static]
 version = "1.4.0"
 features = ["spin_no_std"]
-
-
-
-# [[bin]]
-# name = "simple"
-# path = "src/exercises/00-simple.rs"
