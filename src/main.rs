@@ -21,6 +21,7 @@ use hal::gpio::{*, gpioa::*, gpiob::*};
 use max7219::*;
 use max7219::connectors::*;
 
+use uecosystem::snake::*;
 
 type CONNECTOR = PinConnector<PA6<Output<PushPull>>, PA4<Output<PushPull>>, PA5<Output<PushPull>>>;
 
@@ -57,6 +58,8 @@ fn _wait_for_motion(sensor: &PB7<Input<PullDown>>) {
 fn main() -> ! {
     let (mut delay, mut itm, _motion_sensor, mut display) = initialise();
 
+    let mut gameworld = Game::new();
+
     // display.power_off().unwrap();
     // wait_for_motion(&motion_sensor);
     // delay.delay_ms(1000_u16);
@@ -70,6 +73,7 @@ fn main() -> ! {
 
     let mut counter = 0;
     loop {
+        gameworld.tick();
         // iprintln!(&mut itm.stim[0], "[{}] motion detected - {:?}", counter, motion_sensor.is_high().unwrap());
 
         let matrix: [u8; 8] = [
@@ -101,3 +105,15 @@ fn main() -> ! {
     //      - https://rtfm.rs/0.5/book/en/preface.html
     //      - https://github.com/rnestler/hello-rtfm-rs
 }
+
+
+// use cortex_m_rt::{entry, exception, ExceptionFrame};
+// #[exception]
+// fn HardFault(ef: &ExceptionFrame) -> ! {
+//     panic!("HardFault at {:#?}", ef);
+// }
+//
+// #[exception]
+// fn DefaultHandler(irqn: i16) {
+//     panic!("Unhandled exception (IRQn = {})", irqn);
+// }
