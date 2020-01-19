@@ -185,9 +185,8 @@ checksum = "9199148efbf3463493dd58c03a921add4623147739b9acd15f339b1dc5bfd677"
 
 [[package]]
 name = "max7219"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "426b568d3aa0095db829a6598d5f805a8593aca3bcdaaca796373a7e51012614"
+version = "0.2.0"
+source = "git+https://github.com/arosspope/max7219#fc8aa2948c9e6fe9faa9ea07322b34d1f4566850"
 dependencies = [
  "embedded-hal",
 ]
@@ -199,10 +198,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1411551beb3c11dedfb0a90a0fa256b47d28b9ec2cdff34c25a2fa59e45dbdc"
 
 [[package]]
-name = "panic-halt"
-version = "0.2.0"
+name = "panic-itm"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de96540e0ebde571dc55c73d60ef407c653844e6f9a1e2fdbd40c07b9252d812"
+checksum = "98830d17a95587207e41edaa3009b143d326ce134b0e3538ac98246a67d66cc3"
+dependencies = [
+ "cortex-m 0.6.2",
+]
 
 [[package]]
 name = "proc-macro2"
@@ -321,7 +323,7 @@ dependencies = [
  "lsm303dlhc",
  "m",
  "max7219",
- "panic-halt",
+ "panic-itm",
  "stm32f3xx-hal",
 ]
 

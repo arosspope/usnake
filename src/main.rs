@@ -5,9 +5,9 @@
 // #[macro_use]
 // use lazy_static;
 
-use panic_halt;
+use panic_itm; // use panic_halt; -> print's panics to itm
 use cortex_m::{self, iprint, iprintln, peripheral::ITM};
-use cortex_m_rt::entry;
+use cortex_m_rt::{entry, exception, ExceptionFrame};
 
 // #[macro_use(block)]
 // extern crate nb;
@@ -71,28 +71,28 @@ fn main() -> ! {
 
     iprintln!(&mut itm.stim[0], "[WARN] Attempting to use the motion sensor before 60s elapsed may result in undefined behaviour");
 
-    let mut counter = 0;
+    let mut counter: u8 = 0;
     loop {
-        gameworld.tick();
+        // gameworld.tick();
         // iprintln!(&mut itm.stim[0], "[{}] motion detected - {:?}", counter, motion_sensor.is_high().unwrap());
-
+        
         let matrix: [u8; 8] = [
-            counter % 255,
-            (counter + 1) % 254,
-            (counter + 2) % 254,
-            (counter + 3) % 254,
-            (counter + 4) % 254,
-            (counter + 5) % 254,
-            (counter + 6) % 254,
-            (counter + 7) % 254,
+            counter,
+            ((counter as u16 + 1) % 255) as u8,
+            ((counter as u16 + 2) % 255) as u8,
+            ((counter as u16 + 3) % 255) as u8,
+            ((counter as u16 + 4) % 255) as u8,
+            ((counter as u16 + 5) % 255) as u8,
+            ((counter as u16 + 6) % 255) as u8,
+            ((counter as u16 + 7) % 255) as u8,
         ];
-
+        
         match display.write_raw(0, &matrix) {
             Err(_) => iprintln!(&mut itm.stim[0], "[ERROR] Refreshing display failed"),
             _ => (),
         }
 
-        counter += 1;
+        counter = (counter + 1) % 255;
         delay.delay_ms(150_u16);
     }
 
@@ -107,13 +107,12 @@ fn main() -> ! {
 }
 
 
-// use cortex_m_rt::{entry, exception, ExceptionFrame};
-// #[exception]
-// fn HardFault(ef: &ExceptionFrame) -> ! {
-//     panic!("HardFault at {:#?}", ef);
-// }
-//
-// #[exception]
-// fn DefaultHandler(irqn: i16) {
-//     panic!("Unhandled exception (IRQn = {})", irqn);
-// }
+#[exception]
+fn HardFault(ef: &ExceptionFrame) -> ! {
+    panic!("HardFault at {:#?}", ef);
+}
+
+#[exception]
+fn DefaultHandler(irqn: i16) {
+    panic!("Unhandled exception (IRQn = {})", irqn);
+}
