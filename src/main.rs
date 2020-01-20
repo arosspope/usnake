@@ -53,13 +53,13 @@ fn initialise() -> (Delay, ITM, PB7<Input<PullDown>>, MAX7219<CONNECTOR>, Joysti
 
     let mut gpioa   = dp.GPIOA.split(&mut rcc.ahb);
 
-    let joystick = Joystick {
-        adc_x: Adc::adc1(dp.ADC1, &mut dp.ADC1_2, &mut rcc.ahb, clocks),
-        adc_y: Adc::adc2(dp.ADC2, &mut dp.ADC1_2, &mut rcc.ahb, clocks),
-        x: gpioa.pa0.into_analog(&mut gpioa.moder, &mut gpioa.pupdr),
-        y: gpioa.pa4.into_analog(&mut gpioa.moder, &mut gpioa.pupdr),
-        switch: gpioa.pa2.into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr)
-    };
+    let joystick = Joystick::from_pins(
+        Adc::adc1(dp.ADC1, &mut dp.ADC1_2, &mut rcc.ahb, clocks),
+        Adc::adc2(dp.ADC2, &mut dp.ADC1_2, &mut rcc.ahb, clocks),
+        gpioa.pa0.into_analog(&mut gpioa.moder, &mut gpioa.pupdr),
+        gpioa.pa4.into_analog(&mut gpioa.moder, &mut gpioa.pupdr),
+        gpioa.pa2.into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr)
+    ).unwrap();
 
     // let joystick = Joystick::new();
 

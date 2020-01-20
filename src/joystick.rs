@@ -1,4 +1,5 @@
 use nb;
+use core::{ops::Range, cmp};
 use hal::{
     prelude::*,
     rcc::{Clocks, Rcc},
@@ -20,11 +21,12 @@ pub enum Direction {
 }
 
 pub struct Joystick {
-    pub adc_x: Adc<ADC1>, // TODO: Investigate why two adc's are required to get accurate read of x / y
-    pub adc_y: Adc<ADC2>,
-    pub x: PA0<Analog>,
-    pub y: PA4<Analog>,
-    pub switch: PA2<Input<PullUp>>
+    adc_x: Adc<ADC1>, // TODO: Investigate why two adc's are required to get accurate read of x / y
+    adc_y: Adc<ADC2>,
+    x: PA0<Analog>,
+    y: PA4<Analog>,
+    switch: PA2<Input<PullUp>>,
+    dead_zone: Range<u16>
 }
 
 #[derive(Debug)]
@@ -50,22 +52,20 @@ impl From<()> for Error {
 
 
 impl Joystick {
+    pub fn from_pins(adc_x: Adc<ADC1>, adc_y: Adc<ADC2>, x: PA0<Analog>, y: PA4<Analog>, switch: PA2<Input<PullUp>>) -> Result<Self, Error> {
+        let mut joystick = Joystick {
+            adc_x: adc_x,
+            adc_y: adc_y,
+            x: x,
+            y: y,
+            switch: switch,
+            dead_zone: 0..0
+        };
 
-    pub fn new() -> Self {
-        // TODO: Generalise - Don't tie to a specific ADC / PIN mapping
-        let mut dp      = hal::stm32::Peripherals::take().unwrap();
-        let mut rcc     = dp.RCC.constrain();
-        let mut flash   = dp.FLASH.constrain();
-        let clocks      = rcc.cfgr.freeze(&mut flash.acr);
-        let mut gpioa   = dp.GPIOA.split(&mut rcc.ahb);
+        // Find the deadzone of the joystick
+        joystick.calibrate()?;
 
-        Joystick {
-            adc_x: Adc::adc1(dp.ADC1, &mut dp.ADC1_2, &mut rcc.ahb, clocks),
-            adc_y: Adc::adc2(dp.ADC2, &mut dp.ADC1_2, &mut rcc.ahb, clocks),
-            x: gpioa.pa0.into_analog(&mut gpioa.moder, &mut gpioa.pupdr),
-            y: gpioa.pa4.into_analog(&mut gpioa.moder, &mut gpioa.pupdr),
-            switch: gpioa.pa2.into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr)
-        }
+        Ok(joystick)
     }
 
 
@@ -85,33 +85,26 @@ impl Joystick {
         x = x / SAMPLE_SIZE;
         y = y / SAMPLE_SIZE;
 
-        const CENTRE: core::ops::Range<u32> = 3150..3300;
-        const RANGE_A: core::ops::Range<u32> = 3300..4100;
-        const RANGE_B: core::ops::Range<u32> = 0..3150;
-
-
-        // Would use atan2 here but the opposite directions on each axis do not appear
-        // equidistant in their ADC readings
-        // let theta = (y as f32).atan2(x as f32); // radians
-        let direction = if CENTRE.contains(&x) && RANGE_A.contains(&y) {
+        let direction = if self.dead_zone.contains(&(x as u16)) && (y as u16) > self.dead_zone.end {
             Some(Direction::South)
-        } else if CENTRE.contains(&x) && RANGE_B.contains(&y) {
+        } else if self.dead_zone.contains(&(x as u16)) && (y as u16) < self.dead_zone.start {
             Some(Direction::North)
-        } else if CENTRE.contains(&y) && RANGE_A.contains(&x) {
+        } else if self.dead_zone.contains(&(y as u16)) && (x as u16) > self.dead_zone.end {
             Some(Direction::East)
-        } else if CENTRE.contains(&y) && RANGE_B.contains(&x) {
+        } else if self.dead_zone.contains(&(y as u16)) && (x as u16) < self.dead_zone.start {
             Some(Direction::West)
-        } else if RANGE_B.contains(&x) && RANGE_B.contains(&y) {
+        } else if (x as u16) < self.dead_zone.start && (y as u16) < self.dead_zone.start {
             Some(Direction::NorthWest)
-        } else if RANGE_A.contains(&x) && RANGE_B.contains(&y) {
+        } else if (x as u16) > self.dead_zone.end && (y as u16) < self.dead_zone.start {
             Some(Direction::NorthEast)
-        } else if RANGE_A.contains(&x) && RANGE_A.contains(&y) {
+        } else if (x as u16) > self.dead_zone.end && (y as u16) > self.dead_zone.end {
             Some(Direction::SouthEast)
-        } else if RANGE_B.contains(&x) && RANGE_A.contains(&y) {
+        } else if (x as u16) < self.dead_zone.start && (y as u16) > self.dead_zone.end {
             Some(Direction::SouthWest)
         } else {
             None
         };
+
 
         Ok(direction)
     }
@@ -131,5 +124,23 @@ impl Joystick {
 
     pub fn is_pressed(&self) -> Result<bool, Error> {
         Ok(self.switch.is_low()?)
+    }
+
+    fn calibrate(&mut self) -> Result<(), Error> {
+        const SAMPLE_SIZE: u16 = 64;
+
+        let initial_reading = self.raw_x()?;
+        let mut max = initial_reading;
+        let mut min = initial_reading;
+
+        for _ in 0..SAMPLE_SIZE {
+            let x_y = self.raw_xy()?;
+            max = cmp::max(max, cmp::max(x_y.0, x_y.1));
+            min = cmp::min(min, cmp::min(x_y.0, x_y.1));
+        }
+
+        // Increase the dead zone by about 10% on either side
+        self.dead_zone = (min as f32 * 0.90) as u16..(max as f32 * 1.10) as u16;
+        Ok(())
     }
 }
