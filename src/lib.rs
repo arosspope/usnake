@@ -4,4 +4,6 @@
 #![no_std]
 
 pub mod snake;
+pub mod joystick;
 use snake::*;
+use joystick::*;

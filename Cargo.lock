@@ -322,6 +322,7 @@ dependencies = [
  "lsm303dlhc",
  "m",
  "max7219",
+ "nb",
  "panic-itm",
  "stm32f3xx-hal",
 ]

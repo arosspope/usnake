@@ -15,8 +15,8 @@ use cortex_m_rt::{entry, exception, ExceptionFrame};
 use hal;
 use hal::prelude::*;
 use hal::delay::{self, Delay};
-use hal::stm32::{GPIOB, GPIOA, ADC1};
-use hal::gpio::{*, gpioa::*, gpiob::*};
+use hal::stm32::{GPIOB, GPIOA, ADC1, GPIOE, ADC2, GPIOC};
+use hal::gpio::{*, gpioa::*, gpiob::*, gpioc::*};
 
 use hal::adc::*;
 
@@ -24,11 +24,12 @@ use max7219::*;
 use max7219::connectors::*;
 
 use uecosystem::snake::*;
+use uecosystem::joystick::*;
 
-type CONNECTOR = PinConnector<PA6<Output<PushPull>>, PA4<Output<PushPull>>, PA5<Output<PushPull>>>;
+type CONNECTOR = PinConnector<PB8<Output<PushPull>>, PB9<Output<PushPull>>, PB10<Output<PushPull>>>;
 
 
-fn initialise() -> (Delay, ITM, PB7<Input<PullDown>>, MAX7219<CONNECTOR>, Adc<ADC1>, PA0<Analog>)
+fn initialise() -> (Delay, ITM, PB7<Input<PullDown>>, MAX7219<CONNECTOR>, Joystick)
 {
     let cp = cortex_m::Peripherals::take().unwrap();
     let mut dp = hal::stm32::Peripherals::take().unwrap();
@@ -42,17 +43,40 @@ fn initialise() -> (Delay, ITM, PB7<Input<PullDown>>, MAX7219<CONNECTOR>, Adc<AD
     let motion_sensor   = gpiob.pb7.into_pull_down_input(&mut gpiob.moder, &mut gpiob.pupdr);
 
     // SPI1 for display (PA4=NSS, PA5=SCK, PA6=MISO, PA7=MOSI)
-    let mut gpioa   = dp.GPIOA.split(&mut rcc.ahb);
-    let data        = gpioa.pa6.into_push_pull_output(&mut gpioa.moder, &mut gpioa.otyper);
-    let sck         = gpioa.pa5.into_push_pull_output(&mut gpioa.moder, &mut gpioa.otyper);
-    let cs          = gpioa.pa4.into_push_pull_output(&mut gpioa.moder, &mut gpioa.otyper);
+    // let mut gpioa   = dp.GPIOA.split(&mut rcc.ahb);
+    // let mut gpioc   = dp.GPIOC.split(&mut rcc.ahb);
+    let data        = gpiob.pb8.into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
+    let cs          = gpiob.pb9.into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
+    let sck         = gpiob.pb10.into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
     let display     = MAX7219::from_pins(1, data, cs, sck).unwrap();
-    
+
+    let mut gpioa   = dp.GPIOA.split(&mut rcc.ahb);
+
+    let joystick = Joystick {
+        adc_x: Adc::adc1(dp.ADC1, &mut dp.ADC1_2, &mut rcc.ahb, clocks),
+        adc_y: Adc::adc2(dp.ADC2, &mut dp.ADC1_2, &mut rcc.ahb, clocks),
+        x: gpioa.pa0.into_analog(&mut gpioa.moder, &mut gpioa.pupdr),
+        y: gpioa.pa4.into_analog(&mut gpioa.moder, &mut gpioa.pupdr),
+        switch: gpioa.pa2.into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr)
+    };
+
+    // let joystick = Joystick::new();
+
+
+
     // Set up ADC1
-    let adc1 = Adc::adc1(dp.ADC1, &mut dp.ADC1_2, &mut rcc.ahb, clocks);
-    let adc1_in1_pin = gpioa.pa0.into_analog(&mut gpioa.moder, &mut gpioa.pupdr);
-    
-    (Delay::new(cp.SYST, clocks), cp.ITM, motion_sensor, display, adc1, adc1_in1_pin)
+    // let adc1 = Adc::adc1(dp.ADC1, &mut dp.ADC1_2, &mut rcc.ahb, clocks);
+    // let adc2 = Adc::adc2(dp.ADC2, &mut dp.ADC1_2, &mut rcc.ahb, clocks);
+    // // let adc1_in1_pin = gpioa.pa0.into_analog(&mut gpioa.moder, &mut gpioa.pupdr);
+    // // let adc2_in1_pin = gpioa.pa4.into_analog(&mut gpioa.moder, &mut gpioa.pupdr);
+    // let adc12_inx_pin = gpioc.pc0.into_analog(&mut gpioc.moder, &mut gpioc.pupdr);
+    // let adc12_in8_pin = gpioc.pc1.into_analog(&mut gpioc.moder, &mut gpioc.pupdr);
+    // let switch = gpioa.pa2.into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr);
+
+
+
+
+    (Delay::new(cp.SYST, clocks), cp.ITM, motion_sensor, display, joystick)
 }
 
 fn _wait_for_motion(sensor: &PB7<Input<PullDown>>) {
@@ -62,7 +86,7 @@ fn _wait_for_motion(sensor: &PB7<Input<PullDown>>) {
 
 #[entry]
 fn main() -> ! {
-    let (mut delay, mut itm, _motion_sensor, mut display, mut adc, mut x) = initialise();
+    let (mut delay, mut itm, _motion_sensor, mut display, mut joystick) = initialise();
 
     let mut gameworld = Game::new();
 
@@ -81,9 +105,13 @@ fn main() -> ! {
     loop {
         // gameworld.tick();
         //iprintln!(&mut itm.stim[0], "[{}] motion detected - {:?}", counter, motion_sensor.is_high().unwrap());
-        let read: u16 = adc.read(&mut x).unwrap();
-        iprintln!(&mut itm.stim[0], "x read {}", read);
-        
+
+        // let readx: i16 =  as i16;
+        // let ready: i16 =  as i16;
+        // let x_sample: u16 = adc.read(&mut x).unwrap();
+
+        iprintln!(&mut itm.stim[0], "joystick: direction={:?} {:?}, switch={}", joystick.raw_xy(), joystick.direction(), joystick.is_pressed().unwrap());
+
         let matrix: [u8; 8] = [
             counter,
             ((counter as u16 + 1) % 255) as u8,
@@ -94,7 +122,7 @@ fn main() -> ! {
             ((counter as u16 + 6) % 255) as u8,
             ((counter as u16 + 7) % 255) as u8,
         ];
-        
+
         match display.write_raw(0, &matrix) {
             Err(_) => iprintln!(&mut itm.stim[0], "[ERROR] Refreshing display failed"),
             _ => (),
