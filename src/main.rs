@@ -15,8 +15,10 @@ use cortex_m_rt::{entry, exception, ExceptionFrame};
 use hal;
 use hal::prelude::*;
 use hal::delay::{self, Delay};
-use hal::stm32::{GPIOB, GPIOA};
+use hal::stm32::{GPIOB, GPIOA, ADC1};
 use hal::gpio::{*, gpioa::*, gpiob::*};
+
+use hal::adc::*;
 
 use max7219::*;
 use max7219::connectors::*;
@@ -26,10 +28,10 @@ use uecosystem::snake::*;
 type CONNECTOR = PinConnector<PA6<Output<PushPull>>, PA4<Output<PushPull>>, PA5<Output<PushPull>>>;
 
 
-fn initialise() -> (Delay, ITM, PB7<Input<PullDown>>, MAX7219<CONNECTOR>)
+fn initialise() -> (Delay, ITM, PB7<Input<PullDown>>, MAX7219<CONNECTOR>, Adc<ADC1>, PA0<Analog>)
 {
     let cp = cortex_m::Peripherals::take().unwrap();
-    let dp = hal::stm32::Peripherals::take().unwrap();
+    let mut dp = hal::stm32::Peripherals::take().unwrap();
 
     let mut flash = dp.FLASH.constrain();
     let mut rcc = dp.RCC.constrain();
@@ -45,8 +47,12 @@ fn initialise() -> (Delay, ITM, PB7<Input<PullDown>>, MAX7219<CONNECTOR>)
     let sck         = gpioa.pa5.into_push_pull_output(&mut gpioa.moder, &mut gpioa.otyper);
     let cs          = gpioa.pa4.into_push_pull_output(&mut gpioa.moder, &mut gpioa.otyper);
     let display     = MAX7219::from_pins(1, data, cs, sck).unwrap();
-
-    (Delay::new(cp.SYST, clocks), cp.ITM, motion_sensor, display)
+    
+    // Set up ADC1
+    let adc1 = Adc::adc1(dp.ADC1, &mut dp.ADC1_2, &mut rcc.ahb, clocks);
+    let adc1_in1_pin = gpioa.pa0.into_analog(&mut gpioa.moder, &mut gpioa.pupdr);
+    
+    (Delay::new(cp.SYST, clocks), cp.ITM, motion_sensor, display, adc1, adc1_in1_pin)
 }
 
 fn _wait_for_motion(sensor: &PB7<Input<PullDown>>) {
@@ -56,7 +62,7 @@ fn _wait_for_motion(sensor: &PB7<Input<PullDown>>) {
 
 #[entry]
 fn main() -> ! {
-    let (mut delay, mut itm, _motion_sensor, mut display) = initialise();
+    let (mut delay, mut itm, _motion_sensor, mut display, mut adc, mut x) = initialise();
 
     let mut gameworld = Game::new();
 
@@ -74,7 +80,9 @@ fn main() -> ! {
     let mut counter: u8 = 0;
     loop {
         // gameworld.tick();
-        // iprintln!(&mut itm.stim[0], "[{}] motion detected - {:?}", counter, motion_sensor.is_high().unwrap());
+        //iprintln!(&mut itm.stim[0], "[{}] motion detected - {:?}", counter, motion_sensor.is_high().unwrap());
+        let read: u16 = adc.read(&mut x).unwrap();
+        iprintln!(&mut itm.stim[0], "x read {}", read);
         
         let matrix: [u8; 8] = [
             counter,

@@ -281,12 +281,11 @@ dependencies = [
 [[package]]
 name = "stm32f3xx-hal"
 version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9cba268d4070e654f4e10f35d0cf27e8be5497ebef9a924d8ab8dae1e42d33b6"
+source = "git+https://github.com/strom-und-spiele/stm32f3xx-hal?branch=adc#b9faaa9e8d12af04b9a56f093d568cfc1f4a8092"
 dependencies = [
  "bare-metal",
  "cast",
- "cortex-m 0.6.2",
+ "cortex-m 0.5.10",
  "cortex-m-rt",
  "embedded-hal",
  "nb",

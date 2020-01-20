@@ -13,16 +13,17 @@ atomic = "0.4"
 heapless = "0.5.1"
 lsm303dlhc = "0.2.0"
 m = "0.1.1"
-# max7219 = "0.2.1"  # alternative -> { git = "https://github.com/arosspope/max7219" }
+# max7219 = "0.2.2"
 # max7219 = { path = "/home/andy/projects/max7219" }
 max7219 = { git = "https://github.com/arosspope/max7219" }
 
 [dependencies.hal]
-# package = "alt-stm32f30x-hal"
-# version = "0.22.1"
 package = "stm32f3xx-hal"
 version = "0.4.0"
 features = ["stm32f303", "rt"]
+git = "https://github.com/strom-und-spiele/stm32f3xx-hal"
+branch = "adc"
+
 
 [dependencies.lazy_static]
 version = "1.4.0"
