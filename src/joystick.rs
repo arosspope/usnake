@@ -1,4 +1,3 @@
-// use core::error::Error;
 use nb;
 use hal::{
     prelude::*,
@@ -7,8 +6,6 @@ use hal::{
     stm32::{Peripherals, GPIOB, GPIOA, ADC1, ADC2},
     gpio::{*, gpioa::*, gpiob::*, gpioc::*}
 };
-use core::f32::consts::PI;
-use m::Float; // this trait provides the `atan2` method
 
 #[derive(Debug, PartialEq)]
 pub enum Direction {
@@ -75,105 +72,64 @@ impl Joystick {
     /// Will return 'None' when the joystick is centered and not moving
     ///
     pub fn direction(&mut self) -> Result<Option<Direction>, Error> {
-        let (x, y) = self.raw_xy()?;
+        const SAMPLE_SIZE: u32 = 16;
+        // Average the x / y over a sample set
+        let mut x: u32 = 0;
+        let mut y: u32 = 0;
+        for _ in 0..SAMPLE_SIZE {
+            let x_y = self.raw_xy()?;
+            x += x_y.0 as u32;
+            y += x_y.1 as u32;
+        }
+
+        x = x / SAMPLE_SIZE;
+        y = y / SAMPLE_SIZE;
+
+        const CENTRE: core::ops::Range<u32> = 3150..3300;
+        const RANGE_A: core::ops::Range<u32> = 3300..4100;
+        const RANGE_B: core::ops::Range<u32> = 0..3150;
 
 
-        // const centre = 3200
-        //
-        // let direction = if y
-        //
-        //
-        //
-        //
-        //
-        //
-        //
-        //     Some(Direction::SouthEast)
-        // } else if x < 3100 {
-        //     None
-        // };
-
-
-
-        let theta = (-(y as i32 - 3200) as f32).atan2(-(x as i32 - 3200) as f32); // radians
-        let direction = if theta < ((-7.0 * PI) / 8.0) {
-            Some(Direction::North)
-        } else if theta < ((-5.0 * PI) / 8.0) {
-            Some(Direction::NorthWest)
-        } else if theta < ((-3.0 * PI) / 8.0) {
-            Some(Direction::West)
-        } else if theta < ((-PI) / 8.0) {
-            Some(Direction::SouthWest)
-        } else if theta < ((PI) / 8.0) {
+        // Would use atan2 here but the opposite directions on each axis do not appear
+        // equidistant in their ADC readings
+        // let theta = (y as f32).atan2(x as f32); // radians
+        let direction = if CENTRE.contains(&x) && RANGE_A.contains(&y) {
             Some(Direction::South)
-        } else if theta < ((3.0 * PI) / 8.0) {
-            Some(Direction::SouthEast)
-        } else if theta < ((5.0 * PI) / 8.0) {
+        } else if CENTRE.contains(&x) && RANGE_B.contains(&y) {
+            Some(Direction::North)
+        } else if CENTRE.contains(&y) && RANGE_A.contains(&x) {
             Some(Direction::East)
-        } else if theta < ((7.0 * PI) / 8.0) {
+        } else if CENTRE.contains(&y) && RANGE_B.contains(&x) {
+            Some(Direction::West)
+        } else if RANGE_B.contains(&x) && RANGE_B.contains(&y) {
+            Some(Direction::NorthWest)
+        } else if RANGE_A.contains(&x) && RANGE_B.contains(&y) {
             Some(Direction::NorthEast)
+        } else if RANGE_A.contains(&x) && RANGE_A.contains(&y) {
+            Some(Direction::SouthEast)
+        } else if RANGE_B.contains(&x) && RANGE_A.contains(&y) {
+            Some(Direction::SouthWest)
         } else {
             None
         };
 
-
-        // Ok(direction)
         Ok(direction)
     }
 
     pub fn raw_xy(&mut self) -> Result<(u16, u16), Error> {
-        Ok((self.adc_x.read(&mut self.x)?, self.adc_y.read(&mut self.y)?))
+        // TODO: Probably need better precision in these readings...
+        Ok((self.raw_x()?, self.raw_y()?))
+    }
+
+    pub fn raw_x(&mut self) -> Result<u16, Error> {
+        Ok(self.adc_x.read(&mut self.x)?)
+    }
+
+    pub fn raw_y(&mut self) -> Result<u16, Error> {
+        Ok(self.adc_y.read(&mut self.y)?)
     }
 
     pub fn is_pressed(&self) -> Result<bool, Error> {
         Ok(self.switch.is_low()?)
     }
 }
-
-
-
-
-//
-//
-//
-// pub struct AdcJoystick<PINX, PINY> {
-//     pub adc: Adc<ADC1>,
-//     pub x: PINX,
-//     pub y: PINY,
-// }
-//
-// pub trait Joystick {
-//     fn read(&mut self) -> Direction;
-// }
-//
-// impl<PINX, PINY> Joystick for AdcJoystick<PINX, PINY>
-// where
-//     PINX: embedded_hal::adc::Channel<ADC1, ID = u8>,
-//     PINY: embedded_hal::adc::Channel<ADC1, ID = u8>,
-// {
-//     fn read(&mut self) -> Direction {
-//         let sample_x = self.adc.convert(&self.x, SampleTime::Cycles_480);
-//         let x = self.adc.sample_to_millivolts(sample_x);
-//
-//         let sample_y = self.adc.convert(&self.y, SampleTime::Cycles_480);
-//         let y = self.adc.sample_to_millivolts(sample_y);
-//
-//         if x < 1000 {
-//             return Direction::Left;
-//         }
-//
-//         if x > 2000 {
-//             return Direction::Right;
-//         }
-//
-//         if y < 1000 {
-//             return Direction::Down;
-//         }
-//
-//         if y > 2000 {
-//             return Direction::Up;
-//         }
-//
-//         Direction::Center
-//     }
-// }

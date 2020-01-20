@@ -17,6 +17,7 @@ use hal::prelude::*;
 use hal::delay::{self, Delay};
 use hal::stm32::{GPIOB, GPIOA, ADC1, GPIOE, ADC2, GPIOC};
 use hal::gpio::{*, gpioa::*, gpiob::*, gpioc::*};
+use hal::time::MonoTimer;
 
 use hal::adc::*;
 
@@ -29,7 +30,7 @@ use uecosystem::joystick::*;
 type CONNECTOR = PinConnector<PB8<Output<PushPull>>, PB9<Output<PushPull>>, PB10<Output<PushPull>>>;
 
 
-fn initialise() -> (Delay, ITM, PB7<Input<PullDown>>, MAX7219<CONNECTOR>, Joystick)
+fn initialise() -> (Delay, ITM, PB7<Input<PullDown>>, MAX7219<CONNECTOR>, Joystick, MonoTimer)
 {
     let cp = cortex_m::Peripherals::take().unwrap();
     let mut dp = hal::stm32::Peripherals::take().unwrap();
@@ -76,7 +77,7 @@ fn initialise() -> (Delay, ITM, PB7<Input<PullDown>>, MAX7219<CONNECTOR>, Joysti
 
 
 
-    (Delay::new(cp.SYST, clocks), cp.ITM, motion_sensor, display, joystick)
+    (Delay::new(cp.SYST, clocks), cp.ITM, motion_sensor, display, joystick, MonoTimer::new(cp.DWT, clocks))
 }
 
 fn _wait_for_motion(sensor: &PB7<Input<PullDown>>) {
@@ -86,7 +87,7 @@ fn _wait_for_motion(sensor: &PB7<Input<PullDown>>) {
 
 #[entry]
 fn main() -> ! {
-    let (mut delay, mut itm, _motion_sensor, mut display, mut joystick) = initialise();
+    let (mut delay, mut itm, _motion_sensor, mut display, mut joystick, timer) = initialise();
 
     let mut gameworld = Game::new();
 
@@ -110,7 +111,12 @@ fn main() -> ! {
         // let ready: i16 =  as i16;
         // let x_sample: u16 = adc.read(&mut x).unwrap();
 
+        // let instant = timer.now();
+        // Operation ~19ms
         iprintln!(&mut itm.stim[0], "joystick: direction={:?} {:?}, switch={}", joystick.raw_xy(), joystick.direction(), joystick.is_pressed().unwrap());
+        // let elapsed = instant.elapsed();
+        // iprintln!(&mut itm.stim[0], "elapsed ({}us)", elapsed as f32 / timer.frequency().0 as f32 * 1e6);
+
 
         let matrix: [u8; 8] = [
             counter,
