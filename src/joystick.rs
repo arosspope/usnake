@@ -2,10 +2,9 @@ use nb;
 use core::{ops::Range, cmp};
 use hal::{
     prelude::*,
-    rcc::{Clocks, Rcc},
     adc::Adc,
-    stm32::{Peripherals, GPIOB, GPIOA, ADC1, ADC2},
-    gpio::{*, gpioa::*, gpiob::*, gpioc::*}
+    stm32::{ADC1, ADC2},
+    gpio::{*, gpioa::*}
 };
 
 #[derive(Debug, PartialEq, Clone, Copy)]

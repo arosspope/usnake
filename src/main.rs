@@ -8,15 +8,14 @@ use cortex_m_rt::{entry, exception, ExceptionFrame};
 use hal::{
     prelude::*,
     delay::Delay,
-    // gpio::{*, gpiob::*},
     time::MonoTimer,
     adc::*
 };
 
-use max7219::{*};
+use max7219::*;
 use usnake::{game::*, joystick::*};
 
-fn initialise() -> (Delay, ITM, Joystick, Game)
+fn initialise() -> (Delay, ITM, Game)
 {
     let cp = cortex_m::Peripherals::take().unwrap();
     let mut dp = hal::stm32::Peripherals::take().unwrap();
@@ -41,29 +40,68 @@ fn initialise() -> (Delay, ITM, Joystick, Game)
         gpioa.pa2.into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr)
     ).expect("Unable to initialise joystick class");
 
-    let game = Game::new(
+    let controller = Game::new(
         MonoTimer::new(cp.DWT, clocks).now(),
-        display
+        display,
+        joystick
     );
 
-    // Set up ADC1
-    // let adc1 = Adc::adc1(dp.ADC1, &mut dp.ADC1_2, &mut rcc.ahb, clocks);
-    // let adc2 = Adc::adc2(dp.ADC2, &mut dp.ADC1_2, &mut rcc.ahb, clocks);
-    // // let adc1_in1_pin = gpioa.pa0.into_analog(&mut gpioa.moder, &mut gpioa.pupdr);
-    // // let adc2_in1_pin = gpioa.pa4.into_analog(&mut gpioa.moder, &mut gpioa.pupdr);
-    // let adc12_inx_pin = gpioc.pc0.into_analog(&mut gpioc.moder, &mut gpioc.pupdr);
-    // let adc12_in8_pin = gpioc.pc1.into_analog(&mut gpioc.moder, &mut gpioc.pupdr);
-    // let switch = gpioa.pa2.into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr);
+    (Delay::new(cp.SYST, clocks), cp.ITM, controller)
+}
+
+fn screensaver(count: u8) -> [u8; 8] {
+    let display: [u8; 8] = [
+        count,
+        ((count as u16 + 1) % 256) as u8,
+        ((count as u16 + 2) % 256) as u8,
+        ((count as u16 + 3) % 256) as u8,
+        ((count as u16 + 4) % 256) as u8,
+        ((count as u16 + 5) % 256) as u8,
+        ((count as u16 + 6) % 256) as u8,
+        ((count as u16 + 7) % 256) as u8,
+    ];
+
+    display
+}
 
 
+fn wait_for_user(delay: &mut Delay, controller: &mut Game) {
+    controller.display.power_on().expect("error with display");
 
+    let mut count = 0;
+    loop {
+        // While waiting for user input display screensaver
+        if controller.joystick.is_pressed().expect("error with joystick"){
+            break;
+        }
 
-    (Delay::new(cp.SYST, clocks), cp.ITM, joystick, game)
+        controller.display.write_raw(0, &screensaver(count)).expect("could not write to display");
+        count = (count + 1) % 255;
+        delay.delay_ms(100_u16);
+    }
+}
+
+fn usnake(delay: &mut Delay, controller: &mut Game) -> usize {
+    loop {
+        if let Some(score) = controller.tick() {
+            // Game complete!
+            for _ in 0..7 {
+                controller.display.power_off().expect("error with display");
+                delay.delay_ms(500_u16);
+                controller.display.power_on().expect("error with display");
+                delay.delay_ms(500_u16);
+            }
+            controller.reset();
+            return score
+        };
+
+        delay.delay_ms(200_u16);
+    }
 }
 
 #[entry]
 fn main() -> ! {
-    let (mut delay, mut itm, mut joystick, mut gameworld) = initialise();
+    let (mut delay, mut itm, mut controller) = initialise();
 
     // display.power_off().unwrap();
     // wait_for_motion(&motion_sensor);
@@ -74,53 +112,18 @@ fn main() -> ! {
     // set display intensity lower
     // display.set_intensity(0, 0x1).unwrap();
 
-    // iprintln!(&mut itm.stim[0], "[WARN] Attempting to use the motion sensor before 60s elapsed may result in undefined behaviour");
     loop {
-        let dir = joystick.direction().expect("Unable to read from joystick");
-        // iprintln!(&mut itm.stim[0], "joystick: direction={:?}, switch={}", dir, joystick.is_pressed().unwrap());
-        if !gameworld.tick(dir){
-            break;
-        }
-        //iprintln!(&mut itm.stim[0], "[{}] motion detected - {:?}", counter, motion_sensor.is_high().unwrap());
+        iprintln!(&mut itm.stim[0], "waiting for user input....");
+        wait_for_user(&mut delay, &mut controller);
 
-        // let readx: i16 =  as i16;
-        // let ready: i16 =  as i16;
-        // let x_sample: u16 = adc.read(&mut x).unwrap();
-
-        // Operation ~19ms
-
-        // let elapsed = instant.elapsed();
-        // iprintln!(&mut itm.stim[0], "elapsed ({}us)", elapsed as f32 / timer.frequency().0 as f32 * 1e6);
-        delay.delay_ms(200_u16);
+        iprintln!(&mut itm.stim[0], "game start...");
+        let score = usnake(&mut delay, &mut controller);
+        iprintln!(&mut itm.stim[0], "game end - final score: {}", score);
     }
 
-    let mut counter: u8 = 0;
-    gameworld.display.power_on().expect("Unable to turn on display");
-    loop {
-        let matrix: [u8; 8] = [
-            counter,
-            ((counter as u16 + 1) % 256) as u8,
-            ((counter as u16 + 2) % 256) as u8,
-            ((counter as u16 + 3) % 256) as u8,
-            ((counter as u16 + 4) % 256) as u8,
-            ((counter as u16 + 5) % 256) as u8,
-            ((counter as u16 + 6) % 256) as u8,
-            ((counter as u16 + 7) % 256) as u8,
-        ];
 
-        match gameworld.display.write_raw(0, &matrix) {
-            Err(_) => iprintln!(&mut itm.stim[0], "[ERROR] Refreshing display failed"),
-            _ => (),
-        }
-        counter = (counter + 1) % 255;
-        delay.delay_ms(150_u16);
-    }
 
     // TODO:
-    //  [] Read joystick controller input (joystick.rs) - will require use of ADC
-    //      - https://github.com/stm32-rs/stm32f3xx-hal/pull/47
-    //      - Could maybe turn it into an embeded-hal abstraction crate?
-    //  [] Implement display class - For updating the world every tick of the game world
     //  [] Use RTFM to orchestrate the game
     //      - https://rtfm.rs/0.5/book/en/preface.html
     //      - https://github.com/rnestler/hello-rtfm-rs

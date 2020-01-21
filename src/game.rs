@@ -7,7 +7,7 @@ use hal::{
 use heapless::{consts::*, Vec};
 use max7219::{*, connectors::*};
 use wyhash::wyrng;
-use crate::joystick::Direction;
+use crate::joystick::*;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 struct Point {
@@ -67,6 +67,10 @@ impl Snake {
         self.body.len() == self.body.capacity()
     }
 
+    pub fn len(&self) -> usize {
+        self.body.len()
+    }
+
     pub fn head(&self) -> Point {
         self.body[0]
     }
@@ -107,7 +111,7 @@ impl Snake {
     }
 
     fn direction_conversion(direction: Direction) -> Option<Direction> {
-        // Keep processing as simple as possibly by ignoring some points of the compass
+        // Keep processing as simple as possible by ignoring some points of the compass
         match direction {
             Direction::NorthWest | Direction::SouthEast | Direction::NorthEast | Direction::SouthWest => None,
             _ => Some(direction)
@@ -115,35 +119,37 @@ impl Snake {
     }
 }
 
-type DisplayConnector = PinConnector<PB8<Output<PushPull>>, PB9<Output<PushPull>>, PB10<Output<PushPull>>>;
+pub type DisplayConnector = PinConnector<PB8<Output<PushPull>>, PB9<Output<PushPull>>, PB10<Output<PushPull>>>;
 pub struct Game {
     snake: Snake,
     fruit: Point,
     seed: Instant,
-    pub display: MAX7219<DisplayConnector>
+    pub display: MAX7219<DisplayConnector>,
+    pub joystick: Joystick
 }
 
 
 impl Game {
-    pub fn new(seed: Instant, mut display: MAX7219<DisplayConnector>) -> Self {
+    pub fn new(seed: Instant, mut display: MAX7219<DisplayConnector>, joystick: Joystick) -> Self {
         display.power_on().expect("Unable to turn on display");
         let mut game = Game {
+            seed: seed,
             snake: Snake::new(Game::random_point(seed), Direction::West),
             fruit: Game::random_point(seed),
             display: display,
-            seed: seed,
+            joystick: joystick
         };
         game.render();
         game
     }
 
-    pub fn tick(&mut self, direction: Option<Direction>) -> bool {
+    pub fn tick(&mut self) -> Option<usize> {
         let ate_fruit: bool = self.snake.head() == self.fruit;
-        self.snake.slither(direction, ate_fruit);
+        self.snake.slither(self.joystick.direction().expect("Unable to get joystick direction"), ate_fruit);
 
-        if self.snake.collided_with_tail() {
-            self.display.power_off().expect("Unable to turn off display");
-            return false // Turn into enum
+        if self.snake.collided_with_tail() || self.snake.is_full() {
+            self.render();
+            return Some(self.snake.len())
         }
 
         if ate_fruit {
@@ -151,13 +157,18 @@ impl Game {
         }
 
         self.render();
-        true
+        None
     }
 
     pub fn render(&mut self) {
         let mut world = self.snake.to_array();
         world[self.fruit.y as usize] = world[self.fruit.y as usize] | (1 << self.fruit.x) as u8;
         self.display.write_raw(0, &world).expect("Unable to render snake on display");
+    }
+
+    pub fn reset(&mut self){
+        self.snake = Snake::new(Game::random_point(self.seed), Direction::West);
+        self.fruit = Game::random_point(self.seed);
     }
 
     fn random_point(seed: Instant) -> Point {
