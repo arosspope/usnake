@@ -15,5 +15,5 @@ monitor itm port 0 on
 load
 
 layout src
-break main
+break idle
 continue

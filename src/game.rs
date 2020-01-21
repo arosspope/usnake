@@ -130,7 +130,8 @@ pub struct Game {
 
 impl Game {
     pub fn new(seed: Instant, mut display: MAX7219<DisplayConnector>, joystick: Joystick) -> Self {
-        display.power_on().expect("Unable to turn on display");
+        display.clear_display(0).expect("unable to clear display");
+        display.power_on().expect("unable to turn on display");
         let mut game = Game {
             seed: seed,
             snake: Snake::new(Game::random_point(seed), Direction::West),
@@ -144,7 +145,7 @@ impl Game {
 
     pub fn tick(&mut self) -> Option<usize> {
         let ate_fruit: bool = self.snake.head() == self.fruit;
-        self.snake.slither(self.joystick.direction().expect("Unable to get joystick direction"), ate_fruit);
+        self.snake.slither(self.joystick.direction().expect("unable to get joystick direction"), ate_fruit);
 
         if self.snake.collided_with_tail() || self.snake.is_full() {
             self.render();

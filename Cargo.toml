@@ -19,7 +19,7 @@ nb = "0.1.2"
 max7219 = { git = "https://github.com/arosspope/max7219" }
 # embedded-hal = "0.2.3"
 wyhash = "0.3.0"
-generic-array = "0.13.2"
+cortex-m-rtfm = "0.5.1"
 
 [dependencies.hal]
 package = "stm32f3xx-hal"
