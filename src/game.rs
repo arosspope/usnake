@@ -1,98 +1,94 @@
-// #![no_std]
-
-// use core::str;
-// use core::fmt::{self, Write};
 use hal::{
-    prelude::*,
-    gpio::{*, gpiob::*}
+    delay::Delay,
+    gpio::{*, gpiob::*},
+    time::Instant,
 };
 
 use heapless::{consts::*, Vec};
+use max7219::{*, connectors::*};
+use wyhash::wyrng;
 use crate::joystick::Direction;
 
-
-use max7219::*;
-use max7219::connectors::*;
-type CONNECTOR = PinConnector<PB8<Output<PushPull>>, PB9<Output<PushPull>>, PB10<Output<PushPull>>>;
-
+#[derive(Debug, PartialEq, Clone, Copy)]
+struct Point {
+    x: u8,
+    y: u8
+}
 
 struct Snake {
-    body: Vec<(u8, u8), U64>, // TODO: Make size of snake (and map) configurable
+    body: Vec<Point, U64>, // TODO: Make size of snake (and map) configurable
     direction: Direction,
 }
 
 impl Snake {
-    pub fn new() -> Self {
+    pub fn new(start_point: Point, start_direction: Direction) -> Self {
         let mut body = Vec::new();
-        body.push((4, 4)).expect("Unable to add element to empty vec"); // TODO: Randomise the snake's head
-        let direction = Direction::North;   // TODO: Randomise snake direction
+        body.push(start_point).expect("Unable to add element to empty vec");
 
         Snake {
             body: body,
-            direction: direction
+            direction: start_direction
         }
     }
 
-    pub fn slither(&mut self, new_direction: Option<Direction>, eat: bool) {
+    pub fn slither(&mut self, new_direction: Option<Direction>, ate_fruit: bool) {
         // Update the snake's direction if supplied
         if let Some(dir) = new_direction {
-            self.direction = dir;
+            if let Some(dir) = Snake::direction_conversion(dir) {
+                // Don't let the snake turn 180 in on itself.
+                if !dir.opposite(&self.direction) {
+                    self.direction = dir;
+                }
+            }
         }
 
         // Given the current heading, we want to add a segment to the front of the snake
-        let head = self.next_head();
+        let next_head = self.next_head(self.direction, self.head());
         self.body.reverse();
         if !self.is_full() {
-            self.body.push(head).expect("Snake has grown too long");
+            self.body.push(next_head).expect("Snake has grown too long");
         }
         self.body.reverse();
 
-        if !eat {
+        if !ate_fruit {
             self.body.pop(); // Remove segment from tail of the snake
         }
     }
 
     pub fn to_array(&self) -> [u8; 8] {
-        let mut a = [0, 0, 0, 0, 0, 0, 0, 0];
-
-        for &(x, y) in self.body.iter() {
-            a[y as usize] = a[y as usize] | (1 << x) as u8;
+        let mut world = [0, 0, 0, 0, 0, 0, 0, 0];
+        for &p in self.body.iter() {
+            world[p.y as usize] = world[p.y as usize] | (1 << p.x) as u8;
         }
-
-        a
+        world
     }
 
     pub fn is_full(&self) -> bool {
         self.body.len() == self.body.capacity()
     }
 
-    pub fn head(&self) -> (u8, u8) {
+    pub fn head(&self) -> Point {
         self.body[0]
     }
 
     pub fn collided_with_tail(&self) -> bool {
-        let head = self.body[0];
-
+        let head = self.head();
         for &body in self.body.iter().skip(1) {
             if body == head {
                 return true
             }
         }
-
         false
     }
 
-    fn next_head(&self) -> (u8, u8) {
-        let mut next = self.body[0];
-        match self.direction {
-            Direction::North | Direction::NorthWest => { next.1 = Snake::bounded_subtract_one(self.body[0].1.into(), 8) as u8 },
-            // Direction::NorthEast   => { next.1 = Snake::bounded_subtract_one(x_y.1, 8); next.0 = Snake::bounded_subtract_one(x_y.0, 8) },
-            Direction::East | Direction::NorthEast  => { next.0 = Snake::bounded_subtract_one(self.body[0].0.into(), 8) as u8 },
-            // Direction::SouthEast   => { next.1 = Snake::bounded_add_one(x_y.1, 8); next.0 = Snake::bounded_subtract_one(x_y.0, 8) },
-            Direction::South | Direction::SouthEast => { next.1 = Snake::bounded_add_one(self.body[0].1.into(), 8) as u8 },
-            // Direction::SouthWest   => { next.0 = Snake::bounded_add_one(x_y.0, 8); next.1 = Snake::bounded_add_one(x_y.1, 8); },
-            Direction::West | Direction::SouthWest  => { next.0 = Snake::bounded_add_one(self.body[0].0.into(), 8) as u8 },
-            // Direction::NorthWest   => { next.0 = Snake::bounded_add_one(x_y.0, 8); next.1 = Snake::bounded_subtract_one(x_y.1, 8); },
+    fn next_head(&self, direction: Direction, current_head: Point) -> Point {
+        let mut next = current_head;
+        match direction {
+            Direction::North => { next.y = Snake::bounded_subtract_one(current_head.y.into(), 8) as u8 },
+            Direction::East  => { next.x = Snake::bounded_subtract_one(current_head.x.into(), 8) as u8 },
+            Direction::South => { next.y = Snake::bounded_add_one(current_head.y.into(), 8) as u8 },
+            Direction::West  => { next.x = Snake::bounded_add_one(current_head.x.into(), 8) as u8 },
+            _ => panic!("Unhandled direction: {:?}", direction)
         }
 
         next
@@ -109,43 +105,62 @@ impl Snake {
             val - 1
         }
     }
+
+    fn direction_conversion(direction: Direction) -> Option<Direction> {
+        // Keep processing as simple as possibly by ignoring some points of the compass
+        match direction {
+            Direction::NorthWest | Direction::SouthEast | Direction::NorthEast | Direction::SouthWest => None,
+            _ => Some(direction)
+        }
+    }
 }
 
-
-
+type DisplayConnector = PinConnector<PB8<Output<PushPull>>, PB9<Output<PushPull>>, PB10<Output<PushPull>>>;
 pub struct Game {
     snake: Snake,
-    fruit: (u8, u8),
-    pub display: MAX7219<CONNECTOR>
+    fruit: Point,
+    seed: Instant,
+    pub display: MAX7219<DisplayConnector>
 }
 
 
 impl Game {
-    pub fn new(mut display: MAX7219<CONNECTOR>) -> Self {
+    pub fn new(seed: Instant, mut display: MAX7219<DisplayConnector>) -> Self {
         display.power_on().expect("Unable to turn on display");
         let mut game = Game {
-            snake: Snake::new(),
-            fruit: (0, 1), // TODO: Randomise fruit location
+            snake: Snake::new(Game::random_point(seed), Direction::West),
+            fruit: Game::random_point(seed),
             display: display,
+            seed: seed,
         };
         game.render();
         game
     }
 
     pub fn tick(&mut self, direction: Option<Direction>) -> bool {
-        let eat: bool = self.snake.head() == self.fruit;
-        self.snake.slither(direction, eat);
+        let ate_fruit: bool = self.snake.head() == self.fruit;
+        self.snake.slither(direction, ate_fruit);
+
         if self.snake.collided_with_tail() {
             self.display.power_off().expect("Unable to turn off display");
             return false // Turn into enum
         }
+
+        if ate_fruit {
+            self.fruit = Game::random_point(self.seed);
+        }
+
         self.render();
         true
     }
 
     pub fn render(&mut self) {
         let mut world = self.snake.to_array();
-        world[self.fruit.1 as usize] = world[self.fruit.1 as usize] | (1 << self.fruit.0);
+        world[self.fruit.y as usize] = world[self.fruit.y as usize] | (1 << self.fruit.x) as u8;
         self.display.write_raw(0, &world).expect("Unable to render snake on display");
+    }
+
+    fn random_point(seed: Instant) -> Point {
+        Point { x: wyrng(&mut (seed.elapsed() as u64)) as u8 % 8, y: wyrng(&mut (seed.elapsed() as u64)) as u8 % 8 }
     }
 }

@@ -1,36 +1,22 @@
-#![allow(unused_imports)]
 #![no_main]
 #![no_std]
 
-// #[macro_use]
-// use lazy_static;
-
-use panic_itm; // use panic_halt; -> print's panics to itm
-use cortex_m::{self, iprint, iprintln, peripheral::ITM};
+#[allow(unused_imports)]
+use panic_itm;
+use cortex_m::{self, iprintln, peripheral::ITM};
 use cortex_m_rt::{entry, exception, ExceptionFrame};
+use hal::{
+    prelude::*,
+    delay::Delay,
+    // gpio::{*, gpiob::*},
+    time::MonoTimer,
+    adc::*
+};
 
-// #[macro_use(block)]
-// extern crate nb;
+use max7219::{*};
+use usnake::{game::*, joystick::*};
 
-use hal;
-use hal::prelude::*;
-use hal::delay::{self, Delay};
-use hal::stm32::{GPIOB, GPIOA, ADC1, GPIOE, ADC2, GPIOC};
-use hal::gpio::{*, gpioa::*, gpiob::*, gpioc::*};
-use hal::time::MonoTimer;
-
-use hal::adc::*;
-
-use max7219::*;
-use max7219::connectors::*;
-
-use uecosystem::game::*;
-use uecosystem::joystick::*;
-
-type CONNECTOR = PinConnector<PB8<Output<PushPull>>, PB9<Output<PushPull>>, PB10<Output<PushPull>>>;
-
-
-fn initialise() -> (Delay, ITM, PB7<Input<PullDown>>, MAX7219<CONNECTOR>, Joystick, MonoTimer)
+fn initialise() -> (Delay, ITM, Joystick, Game)
 {
     let cp = cortex_m::Peripherals::take().unwrap();
     let mut dp = hal::stm32::Peripherals::take().unwrap();
@@ -39,31 +25,26 @@ fn initialise() -> (Delay, ITM, PB7<Input<PullDown>>, MAX7219<CONNECTOR>, Joysti
     let mut rcc = dp.RCC.constrain();
     let clocks = rcc.cfgr.freeze(&mut flash.acr);
 
-    // PB7 -> Input from motion sensor
-    let mut gpiob       = dp.GPIOB.split(&mut rcc.ahb);
-    let motion_sensor   = gpiob.pb7.into_pull_down_input(&mut gpiob.moder, &mut gpiob.pupdr);
-
-    // SPI1 for display (PA4=NSS, PA5=SCK, PA6=MISO, PA7=MOSI)
-    // let mut gpioa   = dp.GPIOA.split(&mut rcc.ahb);
-    // let mut gpioc   = dp.GPIOC.split(&mut rcc.ahb);
+    // Display pins
+    let mut gpiob   = dp.GPIOB.split(&mut rcc.ahb);
     let data        = gpiob.pb8.into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
     let cs          = gpiob.pb9.into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
     let sck         = gpiob.pb10.into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
-    let display     = MAX7219::from_pins(1, data, cs, sck).unwrap();
+    let display     = MAX7219::from_pins(1, data, cs, sck).expect("Unable to initialise display");
 
     let mut gpioa   = dp.GPIOA.split(&mut rcc.ahb);
-
-    let joystick = Joystick::from_pins(
+    let joystick    = Joystick::from_pins(
         Adc::adc1(dp.ADC1, &mut dp.ADC1_2, &mut rcc.ahb, clocks),
         Adc::adc2(dp.ADC2, &mut dp.ADC1_2, &mut rcc.ahb, clocks),
         gpioa.pa0.into_analog(&mut gpioa.moder, &mut gpioa.pupdr),
         gpioa.pa4.into_analog(&mut gpioa.moder, &mut gpioa.pupdr),
         gpioa.pa2.into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr)
-    ).unwrap();
+    ).expect("Unable to initialise joystick class");
 
-    // let joystick = Joystick::new();
-
-
+    let game = Game::new(
+        MonoTimer::new(cp.DWT, clocks).now(),
+        display
+    );
 
     // Set up ADC1
     // let adc1 = Adc::adc1(dp.ADC1, &mut dp.ADC1_2, &mut rcc.ahb, clocks);
@@ -77,19 +58,12 @@ fn initialise() -> (Delay, ITM, PB7<Input<PullDown>>, MAX7219<CONNECTOR>, Joysti
 
 
 
-    (Delay::new(cp.SYST, clocks), cp.ITM, motion_sensor, display, joystick, MonoTimer::new(cp.DWT, clocks))
+    (Delay::new(cp.SYST, clocks), cp.ITM, joystick, game)
 }
-
-fn _wait_for_motion(sensor: &PB7<Input<PullDown>>) {
-    while sensor.is_low().unwrap() {}
-}
-
 
 #[entry]
 fn main() -> ! {
-    let (mut delay, mut itm, _motion_sensor, display, mut joystick, timer) = initialise();
-
-    let mut gameworld = Game::new(display);
+    let (mut delay, mut itm, mut joystick, mut gameworld) = initialise();
 
     // display.power_off().unwrap();
     // wait_for_motion(&motion_sensor);
@@ -113,7 +87,6 @@ fn main() -> ! {
         // let ready: i16 =  as i16;
         // let x_sample: u16 = adc.read(&mut x).unwrap();
 
-        // let instant = timer.now();
         // Operation ~19ms
 
         // let elapsed = instant.elapsed();
@@ -126,13 +99,13 @@ fn main() -> ! {
     loop {
         let matrix: [u8; 8] = [
             counter,
-            ((counter as u16 + 1) % 255) as u8,
-            ((counter as u16 + 2) % 255) as u8,
-            ((counter as u16 + 3) % 255) as u8,
-            ((counter as u16 + 4) % 255) as u8,
-            ((counter as u16 + 5) % 255) as u8,
-            ((counter as u16 + 6) % 255) as u8,
-            ((counter as u16 + 7) % 255) as u8,
+            ((counter as u16 + 1) % 256) as u8,
+            ((counter as u16 + 2) % 256) as u8,
+            ((counter as u16 + 3) % 256) as u8,
+            ((counter as u16 + 4) % 256) as u8,
+            ((counter as u16 + 5) % 256) as u8,
+            ((counter as u16 + 6) % 256) as u8,
+            ((counter as u16 + 7) % 256) as u8,
         ];
 
         match gameworld.display.write_raw(0, &matrix) {

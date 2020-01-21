@@ -8,7 +8,7 @@ use hal::{
     gpio::{*, gpioa::*, gpiob::*, gpioc::*}
 };
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Direction {
     North,
     NorthEast,
@@ -18,6 +18,21 @@ pub enum Direction {
     SouthWest,
     West,
     NorthWest
+}
+
+impl Direction {
+    pub fn opposite(&self, other: &Direction) -> bool {
+        match self {
+            Direction::North        => *other == Direction::South,
+            Direction::South        => *other == Direction::North,
+            Direction::East         => *other == Direction::West,
+            Direction::West         => *other == Direction::East,
+            Direction::NorthEast    => *other == Direction::SouthWest,
+            Direction::SouthWest    => *other == Direction::NorthEast,
+            Direction::SouthEast    => *other == Direction::NorthWest,
+            Direction::NorthWest    => *other == Direction::SouthEast,
+        }
+    }
 }
 
 pub struct Joystick {
@@ -127,7 +142,7 @@ impl Joystick {
     }
 
     fn calibrate(&mut self) -> Result<(), Error> {
-        const SAMPLE_SIZE: u16 = 128;
+        const SAMPLE_SIZE: u16 = 64;
 
         let initial_reading = self.raw_x()?;
         let mut max = initial_reading;

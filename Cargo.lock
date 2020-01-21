@@ -2,12 +2,6 @@
 # It is not intended for manual editing.
 [[package]]
 name = "aligned"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d39da9b88ae1a81c03c9c082b8db83f1d0e93914126041962af61034ab44c4a5"
-
-[[package]]
-name = "aligned"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eb1ce8b3382016136ab1d31a1b5ce807144f8b7eb2d5f16b2108f0f07edceb94"
@@ -58,23 +52,11 @@ dependencies = [
 
 [[package]]
 name = "cortex-m"
-version = "0.5.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c0b159a1e8306949579de3698c841dba58058197b65c60807194e4fa1e7a554"
-dependencies = [
- "aligned 0.2.0",
- "bare-metal",
- "cortex-m 0.6.2",
- "volatile-register",
-]
-
-[[package]]
-name = "cortex-m"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2954942fbbdd49996704e6f048ce57567c3e1a4e2dc59b41ae9fde06a01fc763"
 dependencies = [
- "aligned 0.3.2",
+ "aligned",
  "bare-metal",
  "volatile-register",
 ]
@@ -148,9 +130,9 @@ dependencies = [
 
 [[package]]
 name = "heapless"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f339aa7d51777fc0af6aa7cbeb277dfc6e6c029cbdeda48d0fbb92c2337f0e69"
+checksum = "11f6c9395cad684c09e7172ac2b333b838f4099d0545ffd89ba7a89d10dfd605"
 dependencies = [
  "as-slice",
  "generic-array 0.13.2",
@@ -203,14 +185,14 @@ version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "98830d17a95587207e41edaa3009b143d326ce134b0e3538ac98246a67d66cc3"
 dependencies = [
- "cortex-m 0.6.2",
+ "cortex-m",
 ]
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.7"
+version = "1.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0319972dcae462681daf4da1adeeaa066e3ebd29c69be96c6abb1259d2ee2bcc"
+checksum = "3acb317c6ff86a4e579dfa00fc5e6cca91ecbb4e7eb2df0468805b674eb88548"
 dependencies = [
  "unicode-xid",
 ]
@@ -229,6 +211,12 @@ name = "r0"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2a38df5b15c8d5c7e8654189744d8e396bddc18ad48041a500ce52d6948941f"
+
+[[package]]
+name = "rand_core"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c33a3c44ca05fa6f1807d8e6743f3824e8509beca625669633be0acbdf509dc"
 
 [[package]]
 name = "rustc_version"
@@ -273,7 +261,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8796d066c1bc4fe53cdff215fd3bd90e956520698c34c2bb674f87fe400f2fe8"
 dependencies = [
  "bare-metal",
- "cortex-m 0.6.2",
+ "cortex-m",
  "cortex-m-rt",
  "vcell",
 ]
@@ -285,7 +273,7 @@ source = "git+https://github.com/strom-und-spiele/stm32f3xx-hal?branch=adc#b9faa
 dependencies = [
  "bare-metal",
  "cast",
- "cortex-m 0.5.10",
+ "cortex-m",
  "cortex-m-rt",
  "embedded-hal",
  "nb",
@@ -295,9 +283,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.13"
+version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e4ff033220a41d1a57d8125eab57bf5263783dfdcc18688b1dacc6ce9651ef8"
+checksum = "af6f3550d8dff9ef7dc34d384ac6f107e5d31c8f57d9f28e0081503f547ac8f5"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -311,12 +299,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6d2783fe2d6b8c1101136184eb41be8b1ad379e4657050b8aaff0c79ee7575f9"
 
 [[package]]
-name = "uecosystem"
+name = "unicode-xid"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "826e7639553986605ec5979c7dd957c7895e93eabed50ab2ffa7f6128a75097c"
+
+[[package]]
+name = "usnake"
 version = "0.1.0"
 dependencies = [
  "atomic",
- "cortex-m 0.5.10",
+ "cortex-m",
  "cortex-m-rt",
+ "generic-array 0.13.2",
  "heapless",
  "lazy_static",
  "lsm303dlhc",
@@ -325,13 +320,8 @@ dependencies = [
  "nb",
  "panic-itm",
  "stm32f3xx-hal",
+ "wyhash",
 ]
-
-[[package]]
-name = "unicode-xid"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "826e7639553986605ec5979c7dd957c7895e93eabed50ab2ffa7f6128a75097c"
 
 [[package]]
 name = "vcell"
@@ -352,4 +342,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d67cb4616d99b940db1d6bd28844ff97108b498a6ca850e5b6191a532063286"
 dependencies = [
  "vcell",
+]
+
+[[package]]
+name = "wyhash"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "782a50f48ac4336916227cd199c61c7b42f38d0ad705421b49eb12c74c53ae00"
+dependencies = [
+ "rand_core",
 ]
