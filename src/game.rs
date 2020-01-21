@@ -1,5 +1,4 @@
 use hal::{
-    delay::Delay,
     gpio::{*, gpiob::*},
     time::Instant,
 };

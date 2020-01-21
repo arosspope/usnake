@@ -1,4 +1,4 @@
-# uecosystem
+# usnake
 
 ## Setup
 
