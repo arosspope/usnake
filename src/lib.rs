@@ -3,7 +3,7 @@
 #![allow(unused_imports)]
 #![no_std]
 
-pub mod snake;
+pub mod game;
 pub mod joystick;
-use snake::*;
-use joystick::*;
+// use game::*;
+// use joystick::*;

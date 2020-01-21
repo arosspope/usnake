@@ -24,7 +24,7 @@ use hal::adc::*;
 use max7219::*;
 use max7219::connectors::*;
 
-use uecosystem::snake::*;
+use uecosystem::game::*;
 use uecosystem::joystick::*;
 
 type CONNECTOR = PinConnector<PB8<Output<PushPull>>, PB9<Output<PushPull>>, PB10<Output<PushPull>>>;
@@ -87,24 +87,26 @@ fn _wait_for_motion(sensor: &PB7<Input<PullDown>>) {
 
 #[entry]
 fn main() -> ! {
-    let (mut delay, mut itm, _motion_sensor, mut display, mut joystick, timer) = initialise();
+    let (mut delay, mut itm, _motion_sensor, display, mut joystick, timer) = initialise();
 
-    let mut gameworld = Game::new();
+    let mut gameworld = Game::new(display);
 
     // display.power_off().unwrap();
     // wait_for_motion(&motion_sensor);
     // delay.delay_ms(1000_u16);
 
     // make sure to wake the display up
-    display.power_on().unwrap();
+    // gameworld.display.power_on().unwrap();
     // set display intensity lower
     // display.set_intensity(0, 0x1).unwrap();
 
-    iprintln!(&mut itm.stim[0], "[WARN] Attempting to use the motion sensor before 60s elapsed may result in undefined behaviour");
-
-    let mut counter: u8 = 0;
+    // iprintln!(&mut itm.stim[0], "[WARN] Attempting to use the motion sensor before 60s elapsed may result in undefined behaviour");
     loop {
-        // gameworld.tick();
+        let dir = joystick.direction().expect("Unable to read from joystick");
+        // iprintln!(&mut itm.stim[0], "joystick: direction={:?}, switch={}", dir, joystick.is_pressed().unwrap());
+        if !gameworld.tick(dir){
+            break;
+        }
         //iprintln!(&mut itm.stim[0], "[{}] motion detected - {:?}", counter, motion_sensor.is_high().unwrap());
 
         // let readx: i16 =  as i16;
@@ -113,11 +115,15 @@ fn main() -> ! {
 
         // let instant = timer.now();
         // Operation ~19ms
-        iprintln!(&mut itm.stim[0], "joystick: direction={:?} {:?}, switch={}", joystick.raw_xy(), joystick.direction(), joystick.is_pressed().unwrap());
+
         // let elapsed = instant.elapsed();
         // iprintln!(&mut itm.stim[0], "elapsed ({}us)", elapsed as f32 / timer.frequency().0 as f32 * 1e6);
+        delay.delay_ms(200_u16);
+    }
 
-
+    let mut counter: u8 = 0;
+    gameworld.display.power_on().expect("Unable to turn on display");
+    loop {
         let matrix: [u8; 8] = [
             counter,
             ((counter as u16 + 1) % 255) as u8,
@@ -129,11 +135,10 @@ fn main() -> ! {
             ((counter as u16 + 7) % 255) as u8,
         ];
 
-        match display.write_raw(0, &matrix) {
+        match gameworld.display.write_raw(0, &matrix) {
             Err(_) => iprintln!(&mut itm.stim[0], "[ERROR] Refreshing display failed"),
             _ => (),
         }
-
         counter = (counter + 1) % 255;
         delay.delay_ms(150_u16);
     }

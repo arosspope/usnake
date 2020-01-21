@@ -8,7 +8,7 @@ use hal::{
     gpio::{*, gpioa::*, gpiob::*, gpioc::*}
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Direction {
     North,
     NorthEast,
@@ -127,7 +127,7 @@ impl Joystick {
     }
 
     fn calibrate(&mut self) -> Result<(), Error> {
-        const SAMPLE_SIZE: u16 = 64;
+        const SAMPLE_SIZE: u16 = 128;
 
         let initial_reading = self.raw_x()?;
         let mut max = initial_reading;
