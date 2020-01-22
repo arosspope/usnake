@@ -1,12 +1,7 @@
-use hal::{
-    gpio::{*, gpiob::*},
-    time::Instant,
-};
-
+use hal::time::Instant;
 use heapless::{consts::*, Vec};
-use max7219::{*, connectors::*};
 use wyhash::wyrng;
-use crate::joystick::*;
+use crate::joystick::Direction;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 struct Point {
@@ -54,12 +49,12 @@ impl Snake {
         }
     }
 
-    pub fn to_array(&self) -> [u8; 8] {
-        let mut world = [0, 0, 0, 0, 0, 0, 0, 0];
+    pub fn render(&self) -> [u8; 8] {
+        let mut snake = [0, 0, 0, 0, 0, 0, 0, 0];
         for &p in self.body.iter() {
-            world[p.y as usize] = world[p.y as usize] | (1 << p.x) as u8;
+            snake[p.y as usize] = snake[p.y as usize] | (1 << p.x) as u8;
         }
-        world
+        snake
     }
 
     pub fn is_full(&self) -> bool {
@@ -118,59 +113,92 @@ impl Snake {
     }
 }
 
-pub type DisplayConnector = PinConnector<PB8<Output<PushPull>>, PB9<Output<PushPull>>, PB10<Output<PushPull>>>;
+
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub enum GameState {
+    Running,
+    GameOver
+}
+
 pub struct Game {
     snake: Snake,
     fruit: Point,
     seed: Instant,
-    pub display: MAX7219<DisplayConnector>,
-    pub joystick: Joystick
+    state: GameState
 }
 
-
 impl Game {
-    pub fn new(seed: Instant, mut display: MAX7219<DisplayConnector>, joystick: Joystick) -> Self {
-        display.clear_display(0).expect("unable to clear display");
-        display.power_on().expect("unable to turn on display");
-        let mut game = Game {
+    pub fn new(seed: Instant) -> Self {
+        Game {
             seed: seed,
             snake: Snake::new(Game::random_point(seed), Direction::West),
             fruit: Game::random_point(seed),
-            display: display,
-            joystick: joystick
-        };
-        game.render();
-        game
+            state: GameState::Running,
+        }
     }
 
-    pub fn tick(&mut self) -> Option<usize> {
-        let ate_fruit: bool = self.snake.head() == self.fruit;
-        self.snake.slither(self.joystick.direction().expect("unable to get joystick direction"), ate_fruit);
+    /// Tick the game forward. Will return the state of the game after the 'tick'
+    ///
+    ///
+    pub fn tick(&mut self, user_input: Option<Direction>) -> GameState {
+        if self.state == GameState::GameOver {
+            return self.state;
+        }
 
-        if self.snake.collided_with_tail() || self.snake.is_full() {
-            self.render();
-            return Some(self.snake.len())
+        // Check if the snake's head is on top of the fruit then slither forward.
+        let ate_fruit: bool = self.snake.head() == self.fruit;
+        self.snake.slither(user_input, ate_fruit);
+
+        // Check for gameover state
+        if self.is_game_over() {
+            self.state = GameState::GameOver;
+            return self.state;
         }
 
         if ate_fruit {
             self.fruit = Game::random_point(self.seed);
         }
 
-        self.render();
-        None
+        GameState::Running
     }
 
-    pub fn render(&mut self) {
-        let mut world = self.snake.to_array();
+
+    /// Return a representation of the game world
+    ///
+    ///
+    pub fn render(&mut self) -> [u8; 8] {
+        let mut world = self.snake.render();
         world[self.fruit.y as usize] = world[self.fruit.y as usize] | (1 << self.fruit.x) as u8;
-        self.display.write_raw(0, &world).expect("Unable to render snake on display");
+        world
     }
 
-    pub fn reset(&mut self){
+    /// Reset the snake's length, the location of fruit, and the direction of the snake
+    ///
+    ///
+    pub fn reset(&mut self) {
         self.snake = Snake::new(Game::random_point(self.seed), Direction::West);
         self.fruit = Game::random_point(self.seed);
+        self.state = GameState::Running;
     }
 
+    /// Check for game over conditions
+    ///
+    ///
+    pub fn is_game_over(&self) -> bool {
+        self.snake.collided_with_tail() || self.snake.is_full()
+    }
+
+    /// Get the current score.
+    ///
+    ///
+    pub fn score(&self) -> usize {
+        // We -1 as the player always starts with at least one segment (the snake's head)
+        (self.snake.len() - 1)
+    }
+
+    /// Generate a random x / y co-ordinate.
+    ///
+    ///
     fn random_point(seed: Instant) -> Point {
         Point { x: wyrng(&mut (seed.elapsed() as u64)) as u8 % 8, y: wyrng(&mut (seed.elapsed() as u64)) as u8 % 8 }
     }
