@@ -1,8 +1,11 @@
 [package]
-name = "usnake"
-version = "0.1.0"
-authors = ["arosspope <andrew.pope456@gmail.com>"]
-edition = "2018"
+name        = "usnake"
+description = "A rust implementation of the game snake for the stm32f3 discovery board."
+version     = "0.1.0"
+authors     = ["arosspope <andrew.pope456@gmail.com>"]
+edition     = "2018"
+categories  = ["games", "embedded", "no_std"]
+keywords    = ["snake", "stm32f3", "rtfm", "max7219"]
 
 [dependencies]
 cortex-m      = "0.6.2"
