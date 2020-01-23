@@ -21,12 +21,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "atomic"
-version = "0.4.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c210c1f4db048cda477b652d170572d84c9640695835f17663595d3bd543fc28"
-
-[[package]]
 name = "autocfg"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -180,15 +174,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lazy_static"
-version = "1.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
-dependencies = [
- "spin",
-]
-
-[[package]]
 name = "lsm303dlhc"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -200,15 +185,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "m"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9199148efbf3463493dd58c03a921add4623147739b9acd15f339b1dc5bfd677"
-
-[[package]]
 name = "max7219"
-version = "0.2.0"
-source = "git+https://github.com/arosspope/max7219#fc8aa2948c9e6fe9faa9ea07322b34d1f4566850"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "91b2996f4d380a1e48de83fbcf7dd5d379471d67449fef6d60fa545b4764bab4"
 dependencies = [
  "embedded-hal",
 ]
@@ -300,12 +280,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
-name = "spin"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
-
-[[package]]
 name = "stable_deref_trait"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -365,14 +339,11 @@ checksum = "826e7639553986605ec5979c7dd957c7895e93eabed50ab2ffa7f6128a75097c"
 name = "usnake"
 version = "0.1.0"
 dependencies = [
- "atomic",
  "cortex-m",
  "cortex-m-rt",
  "cortex-m-rtfm",
  "heapless",
- "lazy_static",
  "lsm303dlhc",
- "m",
  "max7219",
  "nb",
  "panic-itm",

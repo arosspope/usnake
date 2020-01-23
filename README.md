@@ -1,101 +1,67 @@
-# usnake
+# `usnake` :snake:
+[![Crates.io](https://img.shields.io/crates/v/usnake.svg)](https://crates.io/crates/usnake)
+[![Build Status](https://travis-ci.org/arosspope/usnake.svg?branch=master)](https://travis-ci.org/arosspope/usnake)
 
-## Setup
+A rust implementation of the game [snake](https://en.wikipedia.org/wiki/Snake_(video_game_genre)) for the stm32f3 discovery board.
 
-1. Install packages (Ubuntu 18.04)
-```
-$ apt-get install gdb-multiarch minicom openocd
-```
+tags: rtfm
+categories = ["embedded", "hardware-support", "no-std"]
+keywords = ["snake", "rtfm", "game", "embedded"]
 
-2. udev rules
-```
-$ cat /etc/udev/rules.d/99-ftdi.rules
-...
-# FT232 - USB <-> Serial Converter
-ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", MODE:="0666"
-...
-$ cat /etc/udev/rules.d/99-openocd.rules
-...
-# STM32F3DISCOVERY rev A/B - ST-LINK/V2
-ATTRS{idVendor}=="0483", ATTRS{idProduct}=="3748", MODE:="0666"
+## Introduction
 
-# STM32F3DISCOVERY rev C+ - ST-LINK/V2-1
-ATTRS{idVendor}=="0483", ATTRS{idProduct}=="374b", MODE:="0666"
-...
-$ sudo udevadm control --reload-rules
-```
+![img-1](https://i.imgur.com/yKoJNrH.jpg) ![img-2](https://imgur.com/a/gMvj2Fx.gif)
+> blah blah (link to video)
 
-## Running
+Using the stm32f3, an 8x8 LED display and an analog joystick, I implemented the game snake using Rust's real-time embedded framework for Cortex-M microcontrollers - Real Time For the Masses ([RTFM](https://github.com/rtfm-rs/cortex-m-rtfm)). This project was primarily a learning exercise in understanding how Rust can be used to solve some of the challenges inherent in embedded application development. It includes examples on how to:
 
-1. Establish connection with ST-LINK through `openocd` in a new terminal:
-```
-$ cd /tmp
-$ openocd -f interface/stlink-v2-1.cfg -f target/stm32f3x.cfg
-```
+- Initialise peripherals and interact with them (i.e. digital pins for display, and ADCs for the joystick).
+- Use RTFM to orchestrate software tasks that share mutable resources (i.e. initialised peripherals).
+- Write `macros!` to simplify repeated code patterns, in this case:
+    * Logging messages through, and ensuring exclusive access to, Cortex's standard ITM peripheral.
+    * Scheduling tasks based on the `sysclk` frequency and a desired delay (in seconds).
 
-2. Start gdb session and run target binary on the F3 with:
-```
-$ cargo run --bin {{binary to run}}
-```
+## Playing the game
 
-## gdb
+The hardware required for play includes:
+* [STM32F3DISCOVERY](https://www.st.com/en/evaluation-tools/stm32f3discovery.html)
+* [MAX7219](https://core-electronics.com.au/max7219-serial-dot-matrix-display-module.html) LED display
+* [Analog Joystick](https://www.jaycar.com.au/arduino-compatible-x-and-y-axis-joystick-module/p/XC4422)
+* [_hardware schematic here_]()
 
-1. Start gdb, where {gdb} could be one of `[arm-none-eabi-gdb, gdb-multiarch, gdb]`:
-```
-$ {gdb} -q target/thumbv7em-none-eabihf/debug/led-roulette
-```
 
-2. Connect to the OpenOCD GDB server:
-```
-(gdb) target remote :3333
-Remote debugging using :3333
-0x00000000 in ?? ()
-```
+Playing this game will require you to prepare your development environment for cross-compliation 
 
-3. Load the built elf:
+To build and flash this game, I would suggest following the tutorial [here](https://rust-embedded.github.io/discovery/03-setup/index.html) to prepare your development environment. Assuming one has the necessary tools installed, the contained Makefile can be used to flash the board:
 ```
-(gdb) load
-Loading section .vector_table, size 0x188 lma 0x8000000
-Loading section .text, size 0x38a lma 0x8000188
-Loading section .rodata, size 0x8 lma 0x8000514
-Start address 0x8000188, load size 1306
-Transfer rate: 6 KB/sec, 435 bytes/write.
+$ make flash
 ```
+Once the binary has been flashed the LED display will start to cycle through a binary pattern - this means the system is now ready for play. To start the game, click the joystick.
 
-4. Set break point at main:
-```
-(gdb) break main
-Breakpoint 1 at 0x800018c: file src/05-led-roulette/src/main.rs, line 10.
-```
+A short snippet of gameplay can be found [here]().
 
-5. Enter/Exit/Quit GDB's Text User Interface (TUI):
-```
-(gdb) layout src
-...
-(gdb) tui disable
-...
-(gdb) quit
-```
 
-6. Detach from the session and Quit GDB (will still execute in background):
-```
-(gdb) CTRL+Z
-```
+TODO: 
+ - Rename the contexts to cx
+ - Get rid of refresh display thing
+ - Rename `Resources` struct
+ - Fix openocd file to pause at init routine
+ - swap .expect() to .ok()
 
-## itmdump
 
-1. Make sure openocd + itmpdump are both running in the same directory:
-```
-/tmp$ openocd -f interface/stlink-v2-1.cfg -f target/stm32f3x.cfg
-...
-/tmp$ itmdump -F -f itm.txt
-```
+## Credits
 
-2. Instruct OpenOCD to redirect the ITM output into the same file that itmdump is watching:
-```
-(gdb) # globally enable the ITM and redirect all output to itm.txt
-(gdb) monitor tpiu config internal itm.txt uart off 8000000
+This project wouldn't have been possible with out the following crates and documentation resources:
+- stm32f3 crate
+- max7219 crate
+- discovery docs
+- rtfm docs
 
-(gdb) # enable the ITM port 0
-(gdb) monitor itm port 0 on
-```
+## License
+
+All source code (including code snippets) is licensed under either of
+
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or https://www.apache.org/licenses/LICENSE-2.0)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or https://opensource.org/licenses/MIT)
+
+at your option.
