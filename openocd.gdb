@@ -16,5 +16,5 @@ monitor itm port 0 on
 load
 
 layout src
-break idlescreen
+break init
 continue

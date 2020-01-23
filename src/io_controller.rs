@@ -55,18 +55,12 @@ impl IOController {
     /// Update display and set brightness (0 - 100)
     ///
     ///
-    pub fn refresh_display(&mut self, input: Option<&[u8; 8]>, brightness: Option<u8>) -> Result<(), Error> {
+    pub fn write_display(&mut self, input: &[u8; 8]) -> Result<(), Error> {
         if !self.display_is_on {
             self.turn_on_display()?;
         }
 
-        if let Some(brightness) = brightness {
-            self.set_brightness(brightness)?;
-        }
-
-        if let Some(input) = input {
-            self.display.write_raw(0, &input)?;
-        }
+        self.display.write_raw(0, &input)?;
 
         Ok(())
     }

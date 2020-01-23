@@ -42,11 +42,7 @@ A short snippet of gameplay can be found [here]().
 
 
 TODO: 
- - Rename the contexts to cx
- - Get rid of refresh display thing
- - Rename `Resources` struct
  - Fix openocd file to pause at init routine
- - swap .expect() to .ok()
 
 
 ## Credits
