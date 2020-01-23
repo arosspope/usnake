@@ -12,9 +12,9 @@ A rust implementation of the game [snake](https://en.wikipedia.org/wiki/Snake_(v
   <img src="https://i.imgur.com/KStC0xQ.jpg" width="282" />
 </p>
 
-Using the stm32f3, an 8x8 LED display and an analog joystick, I implemented snake using Rust's real-time embedded framework for Cortex-M microcontrollers - Real Time For the Masses ([RTFM](https://github.com/rtfm-rs/cortex-m-rtfm)). This project was primarily a learning exercise in understanding how Rust can be used to solve some of the challenges inherent in embedded application development. It includes examples on how to:
+Using the stm32f3, an 8x8 LED display and an analog joystick, I implemented snake using Rust's real-time embedded framework for Cortex-M microcontrollers - Real Time For the Masses ([RTFM](https://github.com/rtfm-rs/cortex-m-rtfm)). This project was primarily a learning exercise in understanding how Rust can be used to solve some of the challenges inherent in embedded application development. It includes examples of how to:
 
-- Initialise peripherals and interact with them (i.e. digital pins for display, and ADCs for the joystick).
+- Initialise peripherals and interact with them (i.e. digital pins for the display, and ADCs for the joystick).
 - Use RTFM to orchestrate software tasks that share mutable resources (i.e. peripherals).
 - Write `macros!` to simplify repeated code patterns, in this case:
     * Logging messages through, and ensuring exclusive access to, Cortex's standard ITM peripheral.
@@ -22,11 +22,12 @@ Using the stm32f3, an 8x8 LED display and an analog joystick, I implemented snak
 
 ## Getting started
 ### Hardware setup
-The hardware required for play includes:
+The hardware required for gameplay includes:
 * [STM32F3DISCOVERY](https://www.st.com/en/evaluation-tools/stm32f3discovery.html)
 * [MAX7219](https://core-electronics.com.au/max7219-serial-dot-matrix-display-module.html) LED display
 * [Analog Joystick](https://www.jaycar.com.au/arduino-compatible-x-and-y-axis-joystick-module/p/XC4422)
-* [_hardware schematic here_]()
+
+Pin configuration is described in `main.rs` as part of the `init()` routine.
 
 ### Playing the game
 To build and flash this game, I would suggest following the stm32f3-discovery tutorial [here](https://rust-embedded.github.io/discovery/03-setup/index.html) to prepare your development environment. Assuming one has the necessary tools installed, the contained `Makefile` can be used to build and flash the board.
