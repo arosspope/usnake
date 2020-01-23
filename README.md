@@ -6,12 +6,11 @@ A rust implementation of the game [snake](https://en.wikipedia.org/wiki/Snake_(v
 
 ## Introduction
 
-<p align="middle">
-  <img src="https://i.imgur.com/yKoJNrH.jpg" width="200" />
-  <img src="https://imgur.com/HFMHLEx.gif" width="200" />
-  <img src="https://i.imgur.com/KStC0xQ.jpg" width="200" />
+<p align="left">
+  <img src="https://i.imgur.com/yKoJNrH.jpg" width="282" />
+  <img src="https://imgur.com/hd1DQau.gif" width="282" />
+  <img src="https://i.imgur.com/KStC0xQ.jpg" width="282" />
 </p>
-
 
 Using the stm32f3, an 8x8 LED display and an analog joystick, I implemented snake using Rust's real-time embedded framework for Cortex-M microcontrollers - Real Time For the Masses ([RTFM](https://github.com/rtfm-rs/cortex-m-rtfm)). This project was primarily a learning exercise in understanding how Rust can be used to solve some of the challenges inherent in embedded application development. It includes examples on how to:
 
@@ -30,7 +29,7 @@ The hardware required for play includes:
 * [_hardware schematic here_]()
 
 ### Playing the game
-To build and flash this game, I would suggest following the stm32f3-discovery tutorial [here](https://rust-embedded.github.io/discovery/03-setup/index.html) to prepare your development environment. Assuming one has the necessary tools installed, the contained Makefile can be used to build and flash the board:
+To build and flash this game, I would suggest following the stm32f3-discovery tutorial [here](https://rust-embedded.github.io/discovery/03-setup/index.html) to prepare your development environment. Assuming one has the necessary tools installed, the contained `Makefile` can be used to build and flash the board.
 ```
 $ make flash
 ```
