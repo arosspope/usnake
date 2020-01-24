@@ -1,23 +1,18 @@
 #![no_main]
 #![no_std]
-
 #![allow(unused_imports)]
-use panic_itm;
 use cortex_m::{self, iprintln, itm, peripheral::ITM};
 use cortex_m_rt::{entry, exception, ExceptionFrame};
-use rtfm::{
-    app,
-    Exclusive,
-    cyccnt::{U32Ext}
-};
 use hal::{
+    adc::*,
     prelude::*,
     time::{Hertz, MonoTimer},
-    adc::*
 };
+use panic_itm;
+use rtfm::{app, cyccnt::U32Ext, Exclusive};
 
 use max7219::*;
-use usnake::{game::*, joystick::*, io_controller::*};
+use usnake::{game::*, io_controller::*, joystick::*};
 
 #[app(device = hal::stm32, peripherals = true, monotonic = rtfm::cyccnt::CYCCNT)]
 const SNAKE: () = {
@@ -31,37 +26,46 @@ const SNAKE: () = {
 
     #[init(spawn = [idle_screen])]
     fn init(cx: init::Context) -> init::LateResources {
-        let mut core    : rtfm::Peripherals         = cx.core;     // Cortex-M peripherals
-        let mut device  : hal::stm32::Peripherals   = cx.device;   // Device specific peripherals
+        let mut core: rtfm::Peripherals = cx.core; // Cortex-M peripherals
+        let mut device: hal::stm32::Peripherals = cx.device; // Device specific peripherals
 
-        let mut flash   = device.FLASH.constrain();
-        let mut rcc     = device.RCC.constrain();
-        let clocks      = rcc.cfgr.freeze(&mut flash.acr);
+        let mut flash = device.FLASH.constrain();
+        let mut rcc = device.RCC.constrain();
+        let clocks = rcc.cfgr.freeze(&mut flash.acr);
 
         // Initialize (enable) the monotonic timer (CYCCNT)
         core.DCB.enable_trace();
         core.DWT.enable_cycle_counter();
 
         // Setup for the MAX7219 display
-        let mut gpiob   = device.GPIOB.split(&mut rcc.ahb);
-        let data        = gpiob.pb8.into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
-        let cs          = gpiob.pb9.into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
-        let sck         = gpiob.pb10.into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
-        let display     = MAX7219::from_pins(1, data, cs, sck).unwrap();
+        let mut gpiob = device.GPIOB.split(&mut rcc.ahb);
+        let data = gpiob
+            .pb8
+            .into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
+        let cs = gpiob
+            .pb9
+            .into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
+        let sck = gpiob
+            .pb10
+            .into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
+        let display = MAX7219::from_pins(1, data, cs, sck).unwrap();
 
         // Setup Joystick
-        let mut gpioa   = device.GPIOA.split(&mut rcc.ahb);
-        let joystick    = Joystick::from_pins(
+        let mut gpioa = device.GPIOA.split(&mut rcc.ahb);
+        let joystick = Joystick::from_pins(
             Adc::adc1(device.ADC1, &mut device.ADC1_2, &mut rcc.ahb, clocks),
             Adc::adc2(device.ADC2, &mut device.ADC1_2, &mut rcc.ahb, clocks),
             gpioa.pa0.into_analog(&mut gpioa.moder, &mut gpioa.pupdr),
             gpioa.pa4.into_analog(&mut gpioa.moder, &mut gpioa.pupdr),
-            gpioa.pa2.into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr)
-        ).unwrap();
+            gpioa
+                .pa2
+                .into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr),
+        )
+        .unwrap();
 
         // Initialise IOController and Game objects
-        let game                = Game::new(MonoTimer::new(core.DWT, clocks).now());
-        let mut io_controller   = IOController::from(joystick, display).unwrap();
+        let game = Game::new(MonoTimer::new(core.DWT, clocks).now());
+        let mut io_controller = IOController::from(joystick, display).unwrap();
 
         iprintln!(&mut core.ITM.stim[0], "... app start ...");
         io_controller.set_brightness(100).unwrap();
@@ -71,7 +75,7 @@ const SNAKE: () = {
             logger: core.ITM,
             game: game,
             sysclk_hz: clocks.sysclk(),
-            io_controller: io_controller
+            io_controller: io_controller,
         }
     }
 
@@ -96,22 +100,34 @@ const SNAKE: () = {
 
     #[task(spawn = [game_over], resources = [logger, game, io_controller, sysclk_hz], schedule = [game_tick])]
     fn game_tick(cx: game_tick::Context) {
-        let user_input = cx.resources.io_controller.joystick.direction().expect("unable to read from joystick");
+        let user_input = cx
+            .resources
+            .io_controller
+            .joystick
+            .direction()
+            .expect("unable to read from joystick");
 
         // Tick the game and refresh the screen
         let state = cx.resources.game.tick(user_input);
-        cx.resources.io_controller.write_display(&cx.resources.game.render()).ok();
+        cx.resources
+            .io_controller
+            .write_display(&cx.resources.game.render())
+            .ok();
 
         // Determine what to do next based on the state after the game tick
         match state {
             GameState::Running => {
                 schedule_delayed_task!(cx, game_tick, 200e-3);
-            },
+            }
             GameState::GameOver => {
                 let score = cx.resources.game.score();
-                logprintln!(Exclusive(cx.resources.logger), "... game end - final score: {} ...", score);
+                logprintln!(
+                    Exclusive(cx.resources.logger),
+                    "... game end - final score: {} ...",
+                    score
+                );
                 cx.spawn.game_over().unwrap();
-            },
+            }
         }
     }
 
@@ -136,9 +152,7 @@ const SNAKE: () = {
     extern "C" {
         fn DMA1_CH1(); // Not using the DMA1_CH1 interrupt
     }
-
 };
-
 
 #[exception]
 fn HardFault(ef: &ExceptionFrame) -> ! {
@@ -149,7 +163,6 @@ fn HardFault(ef: &ExceptionFrame) -> ! {
 fn DefaultHandler(irqn: i16) {
     panic!("Unhandled exception (IRQn = {})", irqn);
 }
-
 
 /// Macros for sending a formatted string through ITM (provided by cortex_m)
 #[macro_export]

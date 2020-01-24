@@ -1,12 +1,12 @@
+use crate::joystick::Direction;
 use hal::time::Instant;
 use heapless::{consts::*, Vec};
 use wyhash::wyrng;
-use crate::joystick::Direction;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 struct Point {
     x: u8,
-    y: u8
+    y: u8,
 }
 
 struct Snake {
@@ -17,11 +17,12 @@ struct Snake {
 impl Snake {
     pub fn new(start_point: Point, start_direction: Direction) -> Self {
         let mut body = Vec::new();
-        body.push(start_point).expect("Unable to add element to empty vec");
+        body.push(start_point)
+            .expect("Unable to add element to empty vec");
 
         Snake {
             body: body,
-            direction: start_direction
+            direction: start_direction,
         }
     }
 
@@ -73,7 +74,7 @@ impl Snake {
         let head = self.head();
         for &body in self.body.iter().skip(1) {
             if body == head {
-                return true
+                return true;
             }
         }
         false
@@ -82,11 +83,13 @@ impl Snake {
     fn next_head(&self, direction: Direction, current_head: Point) -> Point {
         let mut next = current_head;
         match direction {
-            Direction::North => { next.y = Snake::bounded_subtract_one(current_head.y.into(), 8) as u8 },
-            Direction::East  => { next.x = Snake::bounded_subtract_one(current_head.x.into(), 8) as u8 },
-            Direction::South => { next.y = Snake::bounded_add_one(current_head.y.into(), 8) as u8 },
-            Direction::West  => { next.x = Snake::bounded_add_one(current_head.x.into(), 8) as u8 },
-            _ => panic!("Unhandled direction: {:?}", direction)
+            Direction::North => {
+                next.y = Snake::bounded_subtract_one(current_head.y.into(), 8) as u8
+            }
+            Direction::East => next.x = Snake::bounded_subtract_one(current_head.x.into(), 8) as u8,
+            Direction::South => next.y = Snake::bounded_add_one(current_head.y.into(), 8) as u8,
+            Direction::West => next.x = Snake::bounded_add_one(current_head.x.into(), 8) as u8,
+            _ => panic!("Unhandled direction: {:?}", direction),
         }
 
         next
@@ -107,24 +110,26 @@ impl Snake {
     fn valid_direction(direction: Direction) -> Option<Direction> {
         // Keep processing as simple as possible by ignoring some points of the compass
         match direction {
-            Direction::NorthWest | Direction::SouthEast | Direction::NorthEast | Direction::SouthWest => None,
-            _ => Some(direction)
+            Direction::NorthWest
+            | Direction::SouthEast
+            | Direction::NorthEast
+            | Direction::SouthWest => None,
+            _ => Some(direction),
         }
     }
 }
 
-
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub enum GameState {
     Running,
-    GameOver
+    GameOver,
 }
 
 pub struct Game {
     snake: Snake,
     fruit: Point,
     seed: Instant,
-    state: GameState
+    state: GameState,
 }
 
 impl Game {
@@ -161,7 +166,6 @@ impl Game {
         GameState::Running
     }
 
-
     /// Return a representation of the game world
     ///
     pub fn render(&mut self) -> [u8; 8] {
@@ -194,6 +198,9 @@ impl Game {
     /// Generate a random x / y co-ordinate.
     ///
     fn random_point(seed: Instant) -> Point {
-        Point { x: wyrng(&mut (seed.elapsed() as u64)) as u8 % 8, y: wyrng(&mut (seed.elapsed() as u64)) as u8 % 8 }
+        Point {
+            x: wyrng(&mut (seed.elapsed() as u64)) as u8 % 8,
+            y: wyrng(&mut (seed.elapsed() as u64)) as u8 % 8,
+        }
     }
 }

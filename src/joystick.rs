@@ -1,11 +1,11 @@
-use nb;
-use core::{ops::Range, cmp};
+use core::{cmp, ops::Range};
 use hal::{
-    prelude::*,
     adc::Adc,
+    gpio::{gpioa::*, *},
+    prelude::*,
     stm32::{ADC1, ADC2},
-    gpio::{*, gpioa::*}
 };
+use nb;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Direction {
@@ -16,20 +16,20 @@ pub enum Direction {
     South,
     SouthWest,
     West,
-    NorthWest
+    NorthWest,
 }
 
 impl Direction {
     pub fn opposite(&self, other: &Direction) -> bool {
         match self {
-            Direction::North        => *other == Direction::South,
-            Direction::South        => *other == Direction::North,
-            Direction::East         => *other == Direction::West,
-            Direction::West         => *other == Direction::East,
-            Direction::NorthEast    => *other == Direction::SouthWest,
-            Direction::SouthWest    => *other == Direction::NorthEast,
-            Direction::SouthEast    => *other == Direction::NorthWest,
-            Direction::NorthWest    => *other == Direction::SouthEast,
+            Direction::North => *other == Direction::South,
+            Direction::South => *other == Direction::North,
+            Direction::East => *other == Direction::West,
+            Direction::West => *other == Direction::East,
+            Direction::NorthEast => *other == Direction::SouthWest,
+            Direction::SouthWest => *other == Direction::NorthEast,
+            Direction::SouthEast => *other == Direction::NorthWest,
+            Direction::NorthWest => *other == Direction::SouthEast,
         }
     }
 }
@@ -40,7 +40,7 @@ pub struct Joystick {
     x: PA0<Analog>,
     y: PA4<Analog>,
     switch: PA2<Input<PullUp>>,
-    dead_zone: Range<u16>
+    dead_zone: Range<u16>,
 }
 
 #[derive(Debug)]
@@ -64,16 +64,21 @@ impl From<()> for Error {
     }
 }
 
-
 impl Joystick {
-    pub fn from_pins(adc_x: Adc<ADC1>, adc_y: Adc<ADC2>, x: PA0<Analog>, y: PA4<Analog>, switch: PA2<Input<PullUp>>) -> Result<Self, Error> {
+    pub fn from_pins(
+        adc_x: Adc<ADC1>,
+        adc_y: Adc<ADC2>,
+        x: PA0<Analog>,
+        y: PA4<Analog>,
+        switch: PA2<Input<PullUp>>,
+    ) -> Result<Self, Error> {
         let mut joystick = Joystick {
             adc_x: adc_x,
             adc_y: adc_y,
             x: x,
             y: y,
             switch: switch,
-            dead_zone: 0..0
+            dead_zone: 0..0,
         };
 
         // Find the deadzone of the joystick
@@ -81,7 +86,6 @@ impl Joystick {
 
         Ok(joystick)
     }
-
 
     /// Will return 'None' when the joystick is centered and not moving
     ///
@@ -118,7 +122,6 @@ impl Joystick {
         } else {
             None
         };
-
 
         Ok(direction)
     }

@@ -1,5 +1,4 @@
 # `usnake` :snake:
-[![Crates.io](https://img.shields.io/crates/v/usnake.svg)](https://crates.io/crates/usnake)
 [![Build Status](https://travis-ci.org/arosspope/usnake.svg?branch=master)](https://travis-ci.org/arosspope/usnake)
 
 A rust implementation of the game [snake](https://en.wikipedia.org/wiki/Snake_(video_game_genre)) for the stm32f3 discovery board.

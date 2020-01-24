@@ -1,6 +1,6 @@
-use hal::gpio::{*, gpiob::*};
-use max7219::{*, connectors::*};
 use crate::joystick::Joystick;
+use hal::gpio::{gpiob::*, *};
+use max7219::{connectors::*, *};
 
 #[derive(Debug)]
 pub struct Error;
@@ -23,19 +23,18 @@ impl From<max7219::PinError> for Error {
     }
 }
 
-
 impl From<()> for Error {
     fn from(_: ()) -> Self {
         Error {}
     }
 }
 
-pub type DisplayPins = PinConnector<PB8<Output<PushPull>>, PB9<Output<PushPull>>, PB10<Output<PushPull>>>;
+pub type DisplayPins =
+    PinConnector<PB8<Output<PushPull>>, PB9<Output<PushPull>>, PB10<Output<PushPull>>>;
 pub struct IOController {
     pub joystick: Joystick,
     display: MAX7219<DisplayPins>,
     display_is_on: bool,
-
 }
 
 impl IOController {
