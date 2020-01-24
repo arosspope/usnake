@@ -52,9 +52,6 @@ impl IOController {
         Ok(controller)
     }
 
-    /// Update display and set brightness (0 - 100)
-    ///
-    ///
     pub fn write_display(&mut self, input: &[u8; 8]) -> Result<(), Error> {
         if !self.display_is_on {
             self.turn_on_display()?;
@@ -65,10 +62,6 @@ impl IOController {
         Ok(())
     }
 
-
-    /// Turn off display also optionally clearing it
-    ///
-    ///
     pub fn turn_off_display(&mut self) -> Result<(), Error> {
         if !self.display_is_on {
             return Err(Error);
@@ -79,9 +72,6 @@ impl IOController {
         Ok(())
     }
 
-    /// Turn on display also optionally clearing it
-    ///
-    ///
     pub fn turn_on_display(&mut self) -> Result<(), Error> {
         if self.display_is_on {
             return Err(Error);

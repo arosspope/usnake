@@ -35,7 +35,7 @@ impl Direction {
 }
 
 pub struct Joystick {
-    adc_x: Adc<ADC1>, // TODO: Investigate why two adc's are required to get accurate read of x / y
+    adc_x: Adc<ADC1>,
     adc_y: Adc<ADC2>,
     x: PA0<Analog>,
     y: PA4<Analog>,
@@ -124,7 +124,6 @@ impl Joystick {
     }
 
     pub fn raw_xy(&mut self) -> Result<(u16, u16), Error> {
-        // TODO: Probably need better precision in these readings...
         Ok((self.raw_x()?, self.raw_y()?))
     }
 

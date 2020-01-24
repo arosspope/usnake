@@ -28,7 +28,7 @@ impl Snake {
     pub fn slither(&mut self, new_direction: Option<Direction>, ate_fruit: bool) {
         // Update the snake's direction if supplied
         if let Some(dir) = new_direction {
-            if let Some(dir) = Snake::direction_conversion(dir) {
+            if let Some(dir) = Snake::valid_direction(dir) {
                 // Don't let the snake turn 180 in on itself.
                 if !dir.opposite(&self.direction) {
                     self.direction = dir;
@@ -104,7 +104,7 @@ impl Snake {
         }
     }
 
-    fn direction_conversion(direction: Direction) -> Option<Direction> {
+    fn valid_direction(direction: Direction) -> Option<Direction> {
         // Keep processing as simple as possible by ignoring some points of the compass
         match direction {
             Direction::NorthWest | Direction::SouthEast | Direction::NorthEast | Direction::SouthWest => None,
@@ -139,7 +139,6 @@ impl Game {
 
     /// Tick the game forward. Will return the state of the game after the 'tick'
     ///
-    ///
     pub fn tick(&mut self, user_input: Option<Direction>) -> GameState {
         if self.state == GameState::GameOver {
             return self.state;
@@ -165,7 +164,6 @@ impl Game {
 
     /// Return a representation of the game world
     ///
-    ///
     pub fn render(&mut self) -> [u8; 8] {
         let mut world = self.snake.render();
         world[self.fruit.y as usize] = world[self.fruit.y as usize] | (1 << self.fruit.x) as u8;
@@ -173,7 +171,6 @@ impl Game {
     }
 
     /// Reset the snake's length, the location of fruit, and the direction of the snake
-    ///
     ///
     pub fn reset(&mut self) {
         self.snake = Snake::new(Game::random_point(self.seed), Direction::West);
@@ -183,13 +180,11 @@ impl Game {
 
     /// Check for game over conditions
     ///
-    ///
     pub fn is_game_over(&self) -> bool {
         self.snake.collided_with_tail() || self.snake.is_full()
     }
 
     /// Get the current score.
-    ///
     ///
     pub fn score(&self) -> usize {
         // We -1 as the player always starts with at least one segment (the snake's head)
@@ -197,7 +192,6 @@ impl Game {
     }
 
     /// Generate a random x / y co-ordinate.
-    ///
     ///
     fn random_point(seed: Instant) -> Point {
         Point { x: wyrng(&mut (seed.elapsed() as u64)) as u8 % 8, y: wyrng(&mut (seed.elapsed() as u64)) as u8 % 8 }

@@ -1,0 +1,15 @@
+language: rust
+rust:
+  - stable
+cache:
+  - cargo
+matrix:
+  fast_finish: true
+install:
+  - rustup target add thumbv7em-none-eabihf
+script:
+  - cargo build
+
+notifications:
+  email:
+    on_success: never
