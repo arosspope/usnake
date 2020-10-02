@@ -4,6 +4,7 @@
 use cortex_m::{self, iprintln, itm, peripheral::ITM};
 use cortex_m_rt::{entry, exception, ExceptionFrame};
 use hal::{
+    adc,
     adc::*,
     prelude::*,
     time::{Hertz, MonoTimer},
@@ -53,8 +54,8 @@ const SNAKE: () = {
         // Setup Joystick
         let mut gpioa = device.GPIOA.split(&mut rcc.ahb);
         let joystick = Joystick::from_pins(
-            Adc::adc1(device.ADC1, &mut device.ADC1_2, &mut rcc.ahb, clocks),
-            Adc::adc2(device.ADC2, &mut device.ADC1_2, &mut rcc.ahb, clocks),
+            Adc::adc1(device.ADC1, &mut device.ADC1_2, &mut rcc.ahb, adc::CkMode::default(), clocks),
+            Adc::adc2(device.ADC2, &mut device.ADC1_2, &mut rcc.ahb, adc::CkMode::default(), clocks),
             gpioa.pa0.into_analog(&mut gpioa.moder, &mut gpioa.pupdr),
             gpioa.pa4.into_analog(&mut gpioa.moder, &mut gpioa.pupdr),
             gpioa
