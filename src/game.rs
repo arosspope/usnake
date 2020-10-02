@@ -192,7 +192,7 @@ impl Game {
     ///
     pub fn score(&self) -> usize {
         // We -1 as the player always starts with at least one segment (the snake's head)
-        (self.snake.len() - 1)
+        self.snake.len() - 1
     }
 
     /// Generate a random x / y co-ordinate.
