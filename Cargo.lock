@@ -286,10 +286,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dba1a27d3efae4351c8051072d619e3ade2820635c3958d826bfea39d59b54c8"
 
 [[package]]
-name = "stm32f3"
-version = "0.9.0"
+name = "stm32-usbd"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8796d066c1bc4fe53cdff215fd3bd90e956520698c34c2bb674f87fe400f2fe8"
+checksum = "70d13eca735cae37df697f599777b000cc0ee924df8452f2b4bfaa6798ab0338"
+dependencies = [
+ "cortex-m",
+ "usb-device",
+ "vcell",
+]
+
+[[package]]
+name = "stm32f3"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2bcd49e908348f01acdc7ee1e0e1f8b9b709f99248749f6f79dcd88dc95ff6b2"
 dependencies = [
  "bare-metal",
  "cortex-m",
@@ -299,8 +310,9 @@ dependencies = [
 
 [[package]]
 name = "stm32f3xx-hal"
-version = "0.4.0"
-source = "git+https://github.com/strom-und-spiele/stm32f3xx-hal?branch=adc#b9faaa9e8d12af04b9a56f093d568cfc1f4a8092"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "688d62765056dd2fc0468198bd5d640b4aaa3dc4dfc6374018d61dc2b1a8410d"
 dependencies = [
  "bare-metal",
  "cast",
@@ -308,6 +320,8 @@ dependencies = [
  "cortex-m-rt",
  "embedded-hal",
  "nb",
+ "stable_deref_trait",
+ "stm32-usbd",
  "stm32f3",
  "void",
 ]
@@ -336,8 +350,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "826e7639553986605ec5979c7dd957c7895e93eabed50ab2ffa7f6128a75097c"
 
 [[package]]
+name = "usb-device"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca58f6d4fed910f27e7150180ea5dc491ae049a347e627e61b61058961e633eb"
+
+[[package]]
 name = "usnake"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "cortex-m",
  "cortex-m-rt",
