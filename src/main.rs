@@ -26,23 +26,29 @@ const SNAKE: () = {
 
     #[init(spawn = [idle_screen])]
     fn init(cx: init::Context) -> init::LateResources {
-        let mut core: rtfm::Peripherals         = cx.core; // Cortex-M peripherals
+        let mut core: rtfm::Peripherals = cx.core; // Cortex-M peripherals
         let mut device: hal::stm32::Peripherals = cx.device; // Device specific peripherals
 
-        let mut flash   = device.FLASH.constrain();
-        let mut rcc     = device.RCC.constrain();
-        let clocks      = rcc.cfgr.freeze(&mut flash.acr);
+        let mut flash = device.FLASH.constrain();
+        let mut rcc = device.RCC.constrain();
+        let clocks = rcc.cfgr.freeze(&mut flash.acr);
 
         // Initialize (enable) the monotonic timer (CYCCNT)
         core.DCB.enable_trace();
         core.DWT.enable_cycle_counter();
 
         // Setup for the MAX7219 display
-        let mut gpiob   = device.GPIOB.split(&mut rcc.ahb);
-        let data        = gpiob.pb8.into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
-        let cs          = gpiob.pb9.into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
-        let sck         = gpiob.pb10.into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
-        let display     = MAX7219::from_pins(1, data, cs, sck).unwrap();
+        let mut gpiob = device.GPIOB.split(&mut rcc.ahb);
+        let data = gpiob
+            .pb8
+            .into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
+        let cs = gpiob
+            .pb9
+            .into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
+        let sck = gpiob
+            .pb10
+            .into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
+        let display = MAX7219::from_pins(1, data, cs, sck).unwrap();
 
         // Setup Joystick
         let mut gpioa = device.GPIOA.split(&mut rcc.ahb);
@@ -51,13 +57,15 @@ const SNAKE: () = {
             Adc::adc2(device.ADC2, &mut device.ADC1_2, &mut rcc.ahb, clocks),
             gpioa.pa0.into_analog(&mut gpioa.moder, &mut gpioa.pupdr),
             gpioa.pa4.into_analog(&mut gpioa.moder, &mut gpioa.pupdr),
-            gpioa.pa2.into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr),
+            gpioa
+                .pa2
+                .into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr),
         )
         .unwrap();
 
         // Initialise IOController and Game objects
-        let game                = Game::new(MonoTimer::new(core.DWT, clocks).now());
-        let mut io_controller   = IOController::from(joystick, display).unwrap();
+        let game = Game::new(MonoTimer::new(core.DWT, clocks).now());
+        let mut io_controller = IOController::from(joystick, display).unwrap();
 
         iprintln!(&mut core.ITM.stim[0], "... app start ...");
         io_controller.set_brightness(100).unwrap();
@@ -113,7 +121,11 @@ const SNAKE: () = {
             }
             GameState::GameOver => {
                 let score = cx.resources.game.score();
-                logprintln!(Exclusive(cx.resources.logger), "... game end - final score: {} ...", score);
+                logprintln!(
+                    Exclusive(cx.resources.logger),
+                    "... game end - final score: {} ...",
+                    score
+                );
                 cx.spawn.game_over().unwrap();
             }
         }

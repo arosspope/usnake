@@ -5,7 +5,6 @@ use hal::{
     prelude::*,
     stm32::{ADC1, ADC2},
 };
-use nb;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Direction {
@@ -73,11 +72,11 @@ impl Joystick {
         switch: PA2<Input<PullUp>>,
     ) -> Result<Self, Error> {
         let mut joystick = Joystick {
-            adc_x: adc_x,
-            adc_y: adc_y,
-            x: x,
-            y: y,
-            switch: switch,
+            adc_x,
+            adc_y,
+            x,
+            y,
+            switch,
             dead_zone: 0..0,
         };
 
@@ -100,8 +99,8 @@ impl Joystick {
             y += x_y.1 as u32;
         }
 
-        x = x / SAMPLE_SIZE;
-        y = y / SAMPLE_SIZE;
+        x /= SAMPLE_SIZE;
+        y /= SAMPLE_SIZE;
 
         let direction = if self.dead_zone.contains(&(x as u16)) && (y as u16) > self.dead_zone.end {
             Some(Direction::South)
