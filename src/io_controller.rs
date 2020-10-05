@@ -40,8 +40,8 @@ pub struct IOController {
 impl IOController {
     pub fn from(joystick: Joystick, display: MAX7219<DisplayPins>) -> Result<Self, Error> {
         let mut controller = IOController {
-            joystick: joystick,
-            display: display,
+            joystick,
+            display,
             display_is_on: true,
         };
 

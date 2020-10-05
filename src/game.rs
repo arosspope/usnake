@@ -21,7 +21,7 @@ impl Snake {
             .expect("Unable to add element to empty vec");
 
         Snake {
-            body: body,
+            body,
             direction: start_direction,
         }
     }
@@ -53,7 +53,7 @@ impl Snake {
     pub fn render(&self) -> [u8; 8] {
         let mut snake = [0, 0, 0, 0, 0, 0, 0, 0];
         for &p in self.body.iter() {
-            snake[p.y as usize] = snake[p.y as usize] | (1 << p.x) as u8;
+            snake[p.y as usize] |= (1 << p.x) as u8;
         }
         snake
     }
@@ -135,7 +135,7 @@ pub struct Game {
 impl Game {
     pub fn new(seed: Instant) -> Self {
         Game {
-            seed: seed,
+            seed,
             snake: Snake::new(Game::random_point(seed), Direction::West),
             fruit: Game::random_point(seed),
             state: GameState::Running,
@@ -170,7 +170,7 @@ impl Game {
     ///
     pub fn render(&mut self) -> [u8; 8] {
         let mut world = self.snake.render();
-        world[self.fruit.y as usize] = world[self.fruit.y as usize] | (1 << self.fruit.x) as u8;
+        world[self.fruit.y as usize] |= (1 << self.fruit.x) as u8;
         world
     }
 
